@@ -1,8 +1,8 @@
 
 DIRECTORY = 'yelp_dataset/'
-BIZ_NAMES = ['business_id', 'name', 'address', 'city', 'state', \
-    'postal code', 'latitude', 'longitude', 'stars', 'review_count', 'is_open', \
-        'attributes', 'categories', 'hours']
+BIZ_NAMES = ['address', 'attributes', 'business_id', 'categories', 'city', 'hours', 'is_open', 'latitude', 'longitude', 'name', 'postal_code', 'review_count', 'stars', 'state']
+
+REV_NAMES = ['review_id', 'user_id', 'business_id', 'stars', 'date', 'text', 'useful', 'funny', 'cool']
 client_id = 's3llWp81o_r38m0RSJnDxg'
 API_key = 'X4h2OqoDVGBNi3t6wfHv5yYlhxQk_h4tBDWhTs7Fy2KRcJeJgExILpJCHZb67v23E9aKcJieCN1aMyP5NpB3rVWG3NMhKeAILOsxzMZgB2Ww_oq3J8m9km9DdWKJXHYx'
 
