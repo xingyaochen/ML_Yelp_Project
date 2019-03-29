@@ -6,8 +6,8 @@
 # csv_file_path = "yelp_dataset/business.csv"
 
 # -*- coding: utf-8 -*-
-"""Convert the Yelp Dataset Challenge dataset from json format to csv.
-For more information on the Yelp Dataset Challenge please visit http://yelp.com/dataset_challenge
+""" Convert the Yelp Dataset Challenge dataset from json format to csv.
+    For more information on the Yelp Dataset Challenge please visit http://yelp.com/dataset_challenge
 """
 import argparse
 import collections
@@ -16,10 +16,10 @@ import json
 from constants import *
 import pandas as pd
 import datetime
-
+import numpy as np
 
 def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
-    """Read in the json dataset file and write it out to a csv file, given the column names."""
+    """ Read in the json dataset file and write it out to a csv file, given the column names. """
     with open(csv_file_path, 'w') as fout:
         csv_file = csv.writer(fout)
         with open(json_file_path) as fin:
@@ -37,20 +37,40 @@ def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
                 if filterD:
                     for k, val in filterD.items():
                         value = line_contents.get(k)
-                        if value and value not in val:                
-                            write_flag = 0
+                        if isinstance(val, float) or isinstance(val, int):
+                            if value < val:                
+                                write_flag = 0
+                        elif value and value not in val:
+                            write_flag = 0   
                 if write_flag:
                     line_contents_val = [line_contents[key] for key in column_names]
-                    csv_file.writerow(line_contents_val)
+                    csv_file.writerow(line_contents_val)   
 
-#make business csv
-filterD = {'city': {"Las Vegas"}}
+
+# make business csv
+
+# filterD = {'city': {"Las Vegas"}}
+filterD = {'review_count': 50}
+
 json_file_path = DIRECTORY + 'business.json'
 csv_file_path = DIRECTORY + 'business.csv'
-read_and_write_csv(json_review_path, csv_review_path, filterD_reviews)
+read_and_write_csv(json_file_path, csv_file_path, filterD)
+business = pd.read_csv (DIRECTORY + "business.csv", encoding = "latin-1")
+city, counts = np.unique(business['city'], return_counts=True)
+
+# change this value to change the threshold value of number of businesses in the area
+threshold = 10
+
+# filter by city and number of businesses in that city
+cities_alot = city[counts > threshold]
+business.set_index('city', inplace=True)
+business_filtered = business.loc[cities_alot]
+business_filtered.to_csv(DIRECTORY + "filtered_business.csv")
 
 
 # make review csv
+
+# change the "business.csv" to "filtered_business.csv" if the location filtering is desired
 biz = pd.read_csv(DIRECTORY+"business.csv", encoding= "latin-1")
 biz_id = biz['business_id']
 filterD_reviews = {'business_id': set(biz_id)}
@@ -58,5 +78,4 @@ json_review_path = DIRECTORY + 'review.json'
 csv_review_path = DIRECTORY + 'review.csv'
 read_and_write_csv(json_review_path, csv_review_path, filterD_reviews)
 dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
-review = pd.read_csv(DIRECTORY+"review.csv",  parse_dates=['date'], date_parser=dateparse, encoding= "latin-1")
-
+review = pd.read_csv(DIRECTORY + "review.csv",  parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
