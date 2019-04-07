@@ -43,7 +43,6 @@ def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
                             elif isinstance(val, set) and isinstance(value, str):
                                 valueSet = set(value.split(', '))
                                 if not val.intersection(valueSet):
-                                    # print(valueSet)
                                     write_flag = 0
                 if write_flag:
                     line_contents_val = [line_contents[key] for key in column_names]
@@ -55,20 +54,20 @@ def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
 # # filterD = {'city': {"Las Vegas"}}
 filterD = {'review_count': 50, 'categories': {'Food', 'Restaurants','Bars', 'Breakfast', 'Lunch', 'Dinner', 'Eatertainment'}}
 
-json_file_path = DIRECTORY + 'business.json'
-csv_file_path = DIRECTORY + 'business.csv'
-read_and_write_csv(json_file_path, csv_file_path, filterD)
-business = pd.read_csv (DIRECTORY + "business.csv", encoding = "latin-1")
-city, counts = np.unique(business['city'], return_counts=True)
+# json_file_path = DIRECTORY + 'business.json'
+# csv_file_path = DIRECTORY + 'business.csv'
+# read_and_write_csv(json_file_path, csv_file_path, filterD)
+# business = pd.read_csv (DIRECTORY + "business.csv", encoding = "latin-1")
+# city, counts = np.unique(business['city'], return_counts=True)
 
-# # change this value to change the threshold value of number of businesses in the area
-threshold = 10
+# # # change this value to change the threshold value of number of businesses in the area
+# threshold = 10
 
-# filter by city and number of businesses in that city
-cities_alot = city[counts > threshold]
-business.set_index('city', inplace=True)
-business_filtered = business.loc[cities_alot]
-business_filtered.to_csv(DIRECTORY + "filtered_business.csv")
+# # filter by city and number of businesses in that city
+# cities_alot = city[counts > threshold]
+# business.set_index('city', inplace=True)
+# business_filtered = business.loc[cities_alot]
+# business_filtered.to_csv(DIRECTORY + "filtered_business.csv")
 
 
 # make review csv
@@ -82,3 +81,5 @@ csv_review_path = DIRECTORY + 'review.csv'
 read_and_write_csv(json_review_path, csv_review_path, filterD_reviews)
 dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
 review = pd.read_csv(DIRECTORY + "review.csv",  parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
+review_sorted = review.sort_values(by = 'business_id', 'date')
+review_sorted.to_csv(DIRECTORY + "sorted_reviews.csv")
