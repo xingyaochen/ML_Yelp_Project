@@ -1,4 +1,3 @@
-
 # bizData = "yelp_dataset/business.json"
 # biz_colNames = ["business_id", "name", "city", "state", \
 #      "postal code",  "latitude", "longitude",  "stars", "review_count", \
@@ -37,11 +36,15 @@ def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
                 if filterD:
                     for k, val in filterD.items():
                         value = line_contents.get(k)
-                        if isinstance(val, float) or isinstance(val, int):
-                            if value < val:                
-                                write_flag = 0
-                        elif value and value not in val:
-                            write_flag = 0   
+                        if value:
+                            if isinstance(val, float) or isinstance(val, int):
+                                if value < val:                
+                                    write_flag = 0
+                            elif isinstance(val, set) and isinstance(value, str):
+                                valueSet = set(value.split(', '))
+                                if not val.intersection(valueSet):
+                                    # print(valueSet)
+                                    write_flag = 0
                 if write_flag:
                     line_contents_val = [line_contents[key] for key in column_names]
                     csv_file.writerow(line_contents_val)   
@@ -49,8 +52,8 @@ def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
 
 # make business csv
 
-# filterD = {'city': {"Las Vegas"}}
-filterD = {'review_count': 50}
+# # filterD = {'city': {"Las Vegas"}}
+filterD = {'review_count': 50, 'categories': {'Food', 'Restaurants','Bars', 'Breakfast', 'Lunch', 'Dinner', 'Eatertainment'}}
 
 json_file_path = DIRECTORY + 'business.json'
 csv_file_path = DIRECTORY + 'business.csv'
@@ -58,7 +61,7 @@ read_and_write_csv(json_file_path, csv_file_path, filterD)
 business = pd.read_csv (DIRECTORY + "business.csv", encoding = "latin-1")
 city, counts = np.unique(business['city'], return_counts=True)
 
-# change this value to change the threshold value of number of businesses in the area
+# # change this value to change the threshold value of number of businesses in the area
 threshold = 10
 
 # filter by city and number of businesses in that city
@@ -71,7 +74,7 @@ business_filtered.to_csv(DIRECTORY + "filtered_business.csv")
 # make review csv
 
 # change the "business.csv" to "filtered_business.csv" if the location filtering is desired
-biz = pd.read_csv(DIRECTORY+"business.csv", encoding= "latin-1")
+biz = pd.read_csv(DIRECTORY+"filtered_business.csv", encoding= "latin-1")
 biz_id = biz['business_id']
 filterD_reviews = {'business_id': set(biz_id)}
 json_review_path = DIRECTORY + 'review.json'
