@@ -10,8 +10,12 @@ def parseRatingOverTime(reviewfile,rolling_span=4):
     review = pd.read_csv(reviewfile, parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
     #group the reviews by business_id and sort within each business by date of the reviews
     group_biz = review.groupby(["business_id"], as_index=False).apply(lambda x: x.sort_values(['date'], ascending = True)).reset_index(drop=True)
-    group_biz['average_over_span'] = group_biz.groupby('business_id')['stars'].rolling(rolling_span).mean()
-    group_biz["running_average"] = group_biz.groupby("business_id", as_index=False).apply(lambda x: x["stars"].expanding().mean())
+    # group_biz['average_over_span'] = group_biz.groupby('business_id')['stars'].rolling(rolling_span).mean()
+    average_over_span=group_biz.groupby('business_id')['stars'].rolling(rolling_span).mean()
+    # group_biz["running_average"] = group_biz.groupby("business_id", as_index=False).apply(lambda x: x["stars"].expanding().mean())
+    running_average= group_biz.groupby("business_id", as_index=False).apply(lambda x: x["stars"].expanding().mean())
+    group_biz=pd.merge(group_biz,average_over_span,on="review_id")
+    group_biz=pd.merge(group_biz,running_average,on="review_id")
     group_biz = group_biz[['business_id','date','average_over_span','running_average', 'review_id']]
     reviewfile_name=reviewfile.split(".")[0]
     group_biz.to_csv(DIRECTORY+reviewfile_name+"_ratingOverTime.csv", encoding="latin-1", index=False)
