@@ -1,27 +1,28 @@
-# Split data from Yelp dataset challenge into train and test sets
-# import argparse
-# import collections
-# import csv
-# import json
+#Plot data from Yelp dataset
 from constants import *
 import pandas as pd
 import matplotlib as matplotlib
 import matplotlib.pyplot as plt
-# # import datetime
-# import numpy as np
+import numpy as np
 
+#filter by stars
+def plot_ratings(bizData):
+    """Plots histogram of business ratings"""
+    #get ratings
+    ratings = bizData[['stars']]
+    ratings = ratings.values
 
-biz = pd.read_csv(DIRECTORY+"filtered_business.csv", encoding= "latin-1")
+    #group and plot
+    cats, heights = np.unique(ratings,return_counts=True)
+    plt.bar(cats, heights, width = 0.5)
+    plt.xlabel("Restaurant Rating")
+    plt.ylabel("Number of Occurrences")
+    plt.show()
 
-y_labels = biz[['business_id','stars']]
-y_labels = y_labels.values
-stars = y_labels[:,1]
-# stars = y_labels[1:5,]
-histvals = [x[1] for x in y_labels]
+def main():
+    bizfile = DIRECTORY + "filtered_business.csv"
+    bizData = pd.read_csv(bizfile, encoding= "latin-1")
+    plot_ratings(bizData)
 
-print(histvals)
-plt.hist(histvals)
-
-plt.show()
-# print(y_labels)
-
+if __name__ == "__main__":
+    main()
