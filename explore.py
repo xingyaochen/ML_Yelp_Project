@@ -16,12 +16,10 @@ def extract_reviews_next(reader, review_file, colNames):
     review_df = pd.DataFrame(columns = colNames)
     first_time = 1
     for i, row in enumerate(reader):
-        # do something here with `row`
-        # print(row)
         if first_time:
             biz_id = row[1]
             first_time = 0 
-        if not first_time:
+        else:
             if row[1] != biz_id:
                 break 
         review_df.loc[len(review_df)] = row 
