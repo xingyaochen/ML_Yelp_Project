@@ -11,6 +11,11 @@ import pandas as pd
 import datetime
 import numpy as np
 
+
+review_sorted = review.sort_values(by = 'business_id', 'date')
+review_sorted.to_csv(DIRECTORY + "sorted_reviews.csv")
+
+
 def extract_reviews_next(reader, review_file, colNames):
     review_df = pd.DataFrame(columns = colNames)
     first_time = 1

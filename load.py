@@ -52,7 +52,7 @@ def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
 # make business csv
 
 # # filterD = {'city': {"Las Vegas"}}
-# filterD = {'review_count': 50, 'categories': {'Food', 'Restaurants','Bars', 'Breakfast', 'Lunch', 'Dinner', 'Eatertainment'}}
+filterD = {'review_count': 50, 'categories': {'Food', 'Restaurants','Bars', 'Breakfast', 'Lunch', 'Dinner', 'Eatertainment'}}
 
 # json_file_path = DIRECTORY + 'business.json'
 # csv_file_path = DIRECTORY + 'business.csv'
