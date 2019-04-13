@@ -10,7 +10,7 @@ biz_id = biz['business_id']
 features_df_clean = construct_meta_features(biz)
 
 featues_ohe = ohe_features(features_df_clean)
-featues_ohe['postal_code'] = biz['postal_code']
+# featues_ohe['postal_code'] = biz['postal_code']
 linked_featues_ohe = pd.concat([biz_id, featues_ohe], axis= 1)
 
 np.random.seed(1234)
@@ -39,4 +39,24 @@ X_test = test_data[list(linked_featues_ohe)[1:]]
 y_test = test_data['running_average']
 
 reg = LassoCV(cv=8, random_state=0).fit(X_train, y_train)
-reg.score(X_test, y_test)
+reg.score(X_train, y_train)
+
+
+def abline(slope, intercept, axes = None):
+    """Plot a line from slope and intercept"""
+    if not axes:
+        axes = ax.gca()
+    x_vals = np.array(axes.get_xlim())
+    y_vals = intercept + slope * x_vals
+    axes.plot(x_vals, y_vals, 'r-', color="red")
+
+
+slope = np.max(reg.coef_)
+feature_max = list(X_train)[np.argmax(reg.coef_)]
+
+x = X_train[feature_max]
+plt.scatter(x, y_train, s = 5)
+abline(slope, reg.intercept_)
+plt.xlabel(feature+ " (logged)", fontsize=20)
+
+plt.show()
