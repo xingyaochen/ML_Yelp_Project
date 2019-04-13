@@ -45,10 +45,10 @@ reg.score(X_train, y_train)
 def abline(slope, intercept, axes = None):
     """Plot a line from slope and intercept"""
     if not axes:
-        axes = ax.gca()
+        axes = plt.gca()
     x_vals = np.array(axes.get_xlim())
     y_vals = intercept + slope * x_vals
-    axes.plot(x_vals, y_vals, 'r-', color="red")
+    plt.plot(x_vals, y_vals, 'r-', color="red")
 
 
 slope = np.max(reg.coef_)
@@ -57,6 +57,6 @@ feature_max = list(X_train)[np.argmax(reg.coef_)]
 x = X_train[feature_max]
 plt.scatter(x, y_train, s = 5)
 abline(slope, reg.intercept_)
-plt.xlabel(feature+ " (logged)", fontsize=20)
-
+plt.xlabel(feature_max, fontsize=14)
+plt.ylabel("Running Rating Average", fontsize=14)
 plt.show()
