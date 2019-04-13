@@ -81,11 +81,47 @@ def jsonL_to_df(jsonL):
     return features_df
 
 
-# biz = pd.read_csv(DIRECTORY+"filtered_business.csv", encoding= "utf-8")
-# # biz = biz.loc[biz['attributes'].isna()]
+
+def strL_to_df(strL):
+    feature_names_set= set()
+    for s_group in strL:
+        if isinstance(s_group, str):
+            s_groupL = s_group.split(", ")
+            if not s_groupL:
+                pass
+            else:
+                d_attri_names = set(s_groupL)
+                feature_names_set = feature_names_set.union(d_attri_names)
+        features_d = {feat: [] for feat in list(feature_names_set)}
+    # column_names = feature_names_d
+    for s_group in strL:
+        if isinstance(s_group, str):
+            s_groupL = set(s_group.split(", "))
+            # print(s_groupL)
+            for key in features_d:
+                if key in s_groupL:
+                    features_d[key].append(True)
+                else:
+                    features_d[key].append(None)
+        else:
+            for key in features_d:
+                features_d[key].append(None)
+    features_df = pd.DataFrame(features_d)
+    return features_df
 
 
-# attri_string = biz['attributes']
+def get_hours(str_time):
+    if str_time:
+        before, after = str_time.split('-')
+        before_h = int(before.split(":")[0])
+        after_h = int(after.split(":")[0])
+        total = after_h - before_h
+        if total < 0:
+            total+=24 
+        return total 
+    else:
+        return 0 
+        
 
 
 def construct_meta_features(biz_df):
@@ -105,9 +141,17 @@ def construct_meta_features(biz_df):
     feature_colnames.remove('GoodForMeal')
     feature_colnames.remove('BusinessParking') 
 
+    categoryL = biz_df['categories']
+    categories_df = strL_to_df(categoryL)
+
+    hr_json = biz_df['hours']
+    hr_df = jsonL_to_df(hr_json)
+    for day in list(hr_df):
+        hr_df[day] = hr_df[day].apply(lambda x: get_hours(x))
+
     features_df = features_df[feature_colnames]
 
-    features_df_full = pd.concat([features_df, amb_df, goodMeal_df, bizPark_df], axis = 1)
+    features_df_full = pd.concat([features_df, amb_df, goodMeal_df, bizPark_df, hr_df, categories_df], axis = 1)
 
     features_df_clean = features_df_full.dropna(axis = 1, thresh = int(0.2*features_df_full.shape[0]))
     return features_df_clean
@@ -140,9 +184,12 @@ def factorize_features(features_df_clean):
 
 def ohe_features(features_df_clean):
     # line_contents_val = [d_attri[key] for key in column_names]
+    daysOfWeek= ['Friday', 'Monday', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday']
     colnames_clean = list(features_df_clean)
     ohe_list = []
     for ft  in colnames_clean:
+        if ft in daysOfWeek:
+            continue
         feat = features_df_clean[ft] 
         # if isinstance(feat[0], str):
         try:
@@ -155,20 +202,25 @@ def ohe_features(features_df_clean):
         except:
             print(ft)
             feat_ohe = pd.get_dummies(feat)
+            print(list(feat_ohe))
             feat_ohe.columns  = [ft+"_" + o for o in list(feat_ohe)]
             ohe_list.append(feat_ohe)
             
-    featues_ohe =  pd.concat(ohe_list, axis = 1)
-    featues_ohe_names = [n for n in list(featues_ohe) if 'False' not in n]
-    return featues_ohe[featues_ohe_names]
+    features_ohe =  pd.concat(ohe_list, axis = 1)
+    features_ohe_names = [n for n in list(features_ohe) if 'False' not in n]
+    features_ohe = features_ohe[features_ohe_names]
+    features_ohe_cont =  pd.concat([features_ohe, features_df_clean[daysOfWeek]], axis = 1)
+    return features_ohe_cont
 
 
 
 biz = pd.read_csv(DIRECTORY+"filtered_business.csv", encoding= "utf-8")
+
 biz_id = biz['business_id']
 features_df_clean = construct_meta_features(biz)
-featues_ohe = ohe_features(features_df_clean)
 
+featues_ohe = ohe_features(features_df_clean)
+featues_ohe['postal_code'] = biz['postal_code']
 linked_featues_ohe = pd.concat([biz_id, featues_ohe], axis= 1)
 
 np.random.seed(1234)
