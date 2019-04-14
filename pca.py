@@ -3,6 +3,7 @@ from constants import *
 import pandas as pd
 from sklearn.linear_model import LassoCV
 from explore import *
+from sklearn.decomposition import PCA
 
 biz = pd.read_csv(DIRECTORY+"filtered_business.csv", encoding= "utf-8")
 
@@ -15,7 +16,8 @@ linked_featues_ohe = pd.concat([biz_id, featues_ohe], axis= 1)
 
 #split the data
 np.random.seed(1234)
-msk = np.random.rand(len(biz_id)) < 0.8
+#use a smaller proportion for pca testing
+msk = np.random.rand(len(biz_id)) < 0.4
 train_biz = set(biz_id[msk])
 test_biz = set(biz_id[msk == False])
 
@@ -48,20 +50,15 @@ score = reg.score(X_test, y_test)
 print(score)
 print('aaaah')
 
-#k=30 get starting values for alphas
-pca=PCA(n_components=k)
-projected_xtrain=pca.fit_transform(X_train)
-reg = LassoCV(alphas=regalphs, cv=8, random_state=0).fit(projected_xtrain, y_train)
-regalphs = reg.alphas
+#code adapted from https://towardsdatascience.com/an-approach-to-choosing-the-number-of-components-in-a-principal-component-analysis-pca-3b9f3d6e73fe
+
+projected_xtrain = PCA().fit(X_train)
+plt.figure()
+plt.plot(np.cumsum(projected_xtrain.explained_variance_ratio_))
+plt.title('Explained Variance')
+plt.xlabel('Number of Components')
+plt.ylabel('Variance (%)') #for each component
+plt.show()
 
 
-# PCA 
-scores = []
-for k in range(1, 40, 4):
-        #Trying different values for PCA
-        pca=PCA(n_components=k)
-        projected_xtrain=pca.fit_transform(X_train)
-        reg = LassoCV(alphas=regalphs, cv=8, random_state=0).fit(projected_xtrain, y_train)
-        projected_xtest = pca.transform(X_test)
-        scores.append(reg.score(projected_xtrain, y_train))
-print(scores)
+
