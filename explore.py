@@ -33,24 +33,18 @@ def extract_reviews_next(reader, review_file, colNames):
 
 review_file = DIRECTORY+'sorted_reviews.csv'
 
-
-
-rolling_span = 4
-with open(review_file, newline='') as f:
-    reader = csv.reader(f)
-    colNames = next(reader)
-    while next(reader):
-        review_df, reader =  extract_reviews_next(reader, review_file, colNames)
-        average_over_span=review_df['stars'].rolling(rolling_span).mean()
-        running_average= review_df["stars"].expanding().mean()
-        review_df['average_over_span'] = average_over_span
-        review_df['running_average'] = running_average 
-        break
-        # do some analysis on this set of biz review
-
-
-
-
+# rolling_span = 4
+# with open(review_file, newline='') as f:
+#     reader = csv.reader(f)
+#     colNames = next(reader)
+#     while next(reader):
+#         review_df, reader =  extract_reviews_next(reader, review_file, colNames)
+#         average_over_span=review_df['stars'].rolling(rolling_span).mean()
+#         running_average= review_df["stars"].expanding().mean()
+#         review_df['average_over_span'] = average_over_span
+#         review_df['running_average'] = running_average 
+#         break
+    
 def jsonL_to_df(jsonL):
     feature_names_set= set()
     for json_item in jsonL:
@@ -212,3 +206,57 @@ def ohe_features(features_df_clean):
     features_ohe_cont =  pd.concat([features_ohe, features_df_clean[daysOfWeek]], axis = 1)
     return features_ohe_cont
 
+
+def abline(slope, intercept, axes = None):
+    """Plot a line from slope and intercept"""
+    if not axes:
+        axes = plt.gca()
+    x_vals = np.array(axes.get_xlim())
+    y_vals = intercept + slope * x_vals
+    plt.plot(x_vals, y_vals, 'r-', color="red")
+
+
+def save_train_test(biz_file, review_file):
+    biz = pd.read_csv(DIRECTORY+biz_file, encoding= "utf-8")
+
+    biz_id = biz['business_id']
+    features_df_clean = construct_meta_features(biz)
+
+    featues_ohe = ohe_features(features_df_clean)
+
+    linked_featues_ohe = pd.concat([biz_id, featues_ohe], axis= 1)
+
+    reviewfile = DIRECTORY + review_file
+    review = parseRatingOverTime(reviewfile)
+    review_sorted = review.sort_values(by = ['business_id', 'date'])
+
+    all_data = linked_featues_ohe.merge(review_sorted, left_on = 'business_id', right_on = 'business_id')
+
+    all_biz = np.unique(all_data['business_id'])
+
+    all_train_y = []
+    all_test_y = []
+    all_train_X = []
+    all_test_X = []
+
+    for biz_id in all_biz:
+        biz_data = all_data[all_data['business_id'] == biz_id]
+        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id']]
+        biz_y = biz_data['running_average']
+        biz_y_train, biz_y_test = biz_y[:int(len(biz_y)*0.8)], biz_y[int(len(biz_y)*0.8):]
+        biz_X_train, biz_X_test = biz_X.iloc[:int(len(biz_y)*0.8)], biz_X.iloc[int(len(biz_y)*0.8):]
+        all_train_X.append(biz_X_train)
+        all_test_X.append(biz_X_test)
+        all_train_y.append(biz_y_train)
+        all_test_y.append(biz_y_test)
+
+    all_train_X_pd  = pd.concat(all_train_X, axis = 0)
+    all_train_y_pd  = pd.concat(all_train_y, axis = 0)
+    all_train =  pd.concat([all_train_X_pd, all_train_y_pd], axis = 1)
+
+    all_test_X_pd  = pd.concat(all_test_X, axis = 0)
+    all_test_y_pd  = pd.concat(all_test_y, axis = 0)
+
+    all_test =  pd.concat([all_test_X_pd, all_test_y_pd], axis = 1)
+    all_train.to_csv(DIRECTORY+"training.csv")
+    all_test.to_csv(DIRECTORY+"testing.csv")
