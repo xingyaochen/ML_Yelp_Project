@@ -241,7 +241,7 @@ def save_train_test(biz_file, review_file):
 
     for biz_id in all_biz:
         biz_data = all_data[all_data['business_id'] == biz_id]
-        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id']]
+        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id']+['business_id']]
         biz_y = biz_data['running_average']
         biz_y_train, biz_y_test = biz_y[:int(len(biz_y)*0.8)], biz_y[int(len(biz_y)*0.8):]
         biz_X_train, biz_X_test = biz_X.iloc[:int(len(biz_y)*0.8)], biz_X.iloc[int(len(biz_y)*0.8):]

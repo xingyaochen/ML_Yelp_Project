@@ -24,8 +24,16 @@ def singleBizInterval(startperc,singleBiz):
     #index into df and just get rows between review start and review end
     return trainx, trainy, valx, valy
 
+def getBizIntervals(startperc):
+    #need to add in dataframe here
+    businesses = np.unique(['business_id'])
+    for biz in businesses:
+        currentdf = df.loc[df['business_id'] == biz]
+        #call single biz interval here
+    #somehow concatenate all of these into one dataframe again
+    
+    
 #get smaller data frame for each business
-
 
 
 
