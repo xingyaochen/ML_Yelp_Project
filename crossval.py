@@ -44,6 +44,21 @@ def getBizIntervals(startperc, train_data):
     #put all the reviews back into dataframes
     validationdf = pd.concat(validationdf, axis =0)
     traindf = pd.concat(traindf, axis=0)
-    print(validationdf)
-    print(traindf)
     return validationdf, traindf
+
+def crossValidation(train_data, numfolds):
+    """Returns list where each element is a list containing a 
+    training dataframe and validation dataframe"""
+    #figuring out starting percents
+    sepVal = 40/numfolds
+    i = 0
+    startVals = []
+    while i <= 40:
+        startVals.append(i/100)
+        i+= sepVal
+    #now get train and validation sets given each start value
+    crossValSets = []
+    for start in startVals:
+        crossValSets.append([getBizIntervals(start, train_data)])
+    print(len(crossValSets))
+    return crossValSets
