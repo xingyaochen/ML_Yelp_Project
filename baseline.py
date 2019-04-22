@@ -22,9 +22,7 @@ from lasso_regression import *
 # test_data = test_data.dropna(how = 'any')
 
 
-
-
-train_data = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
+# train_data = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
 
 features = ['RestaurantsGoodForGroups_True', 'HasTV_True', 'WheelchairAccessible_True', 'RestaurantsAttire_casual', 'RestaurantsAttire_dressy',\
  'RestaurantsAttire_formal', 'OutdoorSeating_True', 'NoiseLevel_average', 'NoiseLevel_loud', 'NoiseLevel_quiet', 'NoiseLevel_very_loud', \
@@ -35,7 +33,8 @@ features = ['RestaurantsGoodForGroups_True', 'HasTV_True', 'WheelchairAccessible
 
 labels = ['running_average']
 
-best_model = regressionCV(cv_filename, features)
+cv_filename = "cross_validation.csv"
+best_model = regressionCV(cv_filename, features, labels)
 print(best_model.get_params())
 
 

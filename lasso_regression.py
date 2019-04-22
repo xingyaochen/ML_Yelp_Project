@@ -21,9 +21,9 @@ from crossval import *
 # train_data = train_data.dropna(how = 'any')
 # test_data = test_data.dropna(how = 'any')
 
-def regressionCV(cv_filename, features):
-    cross_validation = pd.read_csv(DIRECTORY+"cross_validation.csv", encoding= "utf-8")
-    numFolds = int(np.max(cross_validation['fold']))
+def regressionCV(cv_filename, features, labels):
+    cross_validation = pd.read_csv(DIRECTORY+cv_filename, encoding= "utf-8")
+    numFolds = int(np.max(cross_validation['foldNum']))
     alphas = [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]
     alpha_scores_train = []
     alpha_scores_test= []
