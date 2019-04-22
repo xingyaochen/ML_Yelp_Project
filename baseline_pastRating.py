@@ -31,12 +31,11 @@ features = ['RestaurantsGoodForGroups_True', 'HasTV_True', 'WheelchairAccessible
      'RestaurantsTableService_True', 'BusinessAcceptsCreditCards_True', 'WiFi_free', 'WiFi_no', 'WiFi_paid', 'RestaurantsReservations_True',\
           'Caters_True', 'Alcohol_beer_and_wine', 'Alcohol_full_bar', 'Alcohol_none', 'RestaurantsDelivery_True', 'RestaurantsTakeOut_True', 'GoodForKids_True',\
                'RestaurantsPriceRange2_1', 'RestaurantsPriceRange2_2', 'RestaurantsPriceRange2_3', 'RestaurantsPriceRange2_4', 'BikeParking_True', 'Friday',\
-                    'Monday', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday']
+                    'Monday', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday', 'running_average_past']
 
 labels = ['running_average']
 
 best_model = regressionCV(cv_filename, features)
-print(best_model.get_params())
 
 
 # .fit(X_train, y_train)
