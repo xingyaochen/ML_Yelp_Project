@@ -25,10 +25,14 @@ def regressionCV(cv_filename, features, labels):
     cross_validation = pd.read_csv(DIRECTORY+cv_filename, encoding= "utf-8")
     numFolds = int(np.max(cross_validation['foldNum']))
     alphas = [0.001, 0.01, 0.1, 1, 10, 100]
-    alpha_scores_train = np.empty((len(alphas), numFolds))
-    alpha_scores_test= np.empty((len(alphas), numFolds))
+    rmse_alpha_scores_train = np.empty((len(alphas), numFolds+1))
+    rmse_alpha_scores_test= np.empty((len(alphas), numFolds+1))
+
+    r2_alpha_scores_train = np.empty((len(alphas), numFolds+1))
+    r2_alpha_scores_test = np.empty((len(alphas), numFolds+1))
+
     regList = [Lasso(alpha = a, random_state=0) for a in alphas]
-    for i in range(numFolds-1):
+    for i in range(numFolds+1):
         print("Running CV fold", i)
         test_CV = cross_validation.loc[cross_validation['foldNum']==i]
         train_CV = cross_validation.loc[cross_validation['foldNum']!=i]
@@ -40,17 +44,32 @@ def regressionCV(cv_filename, features, labels):
         train_CV_y = train_CV[labels]
         rmse_train = []
         rmse_test = []
+        r2_train, r2_test = [], []
+
         for j, a in enumerate(alphas):
             reg_m = regList[j]
             reg_m.fit(train_CV_X, train_CV_y)
+
+            r2_train.append(reg_m.score(train_CV_X, train_CV_y))
+            r2_test.append(reg_m.score(test_CV_X, test_CV_y))
+
             rmse_train.append(metrics.mean_squared_error(train_CV_y, reg_m.predict(train_CV_X)))
             rmse_test.append(metrics.mean_squared_error(test_CV_y, reg_m.predict(test_CV_X)))
         
-        alpha_scores_train[:,i] = rmse_train
-        alpha_scores_test[:,i] = rmse_test 
-    score_list_test = np.mean(alpha_scores_test, axis = 1)
-    score_list_train = np.mean(alpha_scores_train, axis = 1)
-    return regList[np.argmax(score_list_test)], score_list_test, score_list_train
+        rmse_alpha_scores_train[:,i] = rmse_train
+        rmse_alpha_scores_test[:,i] = rmse_test 
+
+        r2_alpha_scores_train[:,i] = r2_train
+        r2_alpha_scores_test[:,i] = r2_test
+
+
+    rmse_list_test = np.mean(rmse_alpha_scores_test, axis = 1)
+    rmse_list_train = np.mean(rmse_alpha_scores_train, axis = 1)
+
+    r2_list_test = np.mean(r2_alpha_scores_test, axis = 1)
+    r2_list_train = np.mean(r2_alpha_scores_train, axis = 1)
+
+    return regList, rmse_list_test, rmse_list_train, r2_list_test, r2_list_train
 
 
 

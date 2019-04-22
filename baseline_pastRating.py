@@ -24,7 +24,7 @@ from lasso_regression import *
 
 
 
-train_data = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
+# train_data = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
 
 features = ['RestaurantsGoodForGroups_True', 'HasTV_True', 'WheelchairAccessible_True', 'RestaurantsAttire_casual', 'RestaurantsAttire_dressy',\
  'RestaurantsAttire_formal', 'OutdoorSeating_True', 'NoiseLevel_average', 'NoiseLevel_loud', 'NoiseLevel_quiet', 'NoiseLevel_very_loud', \
@@ -34,9 +34,30 @@ features = ['RestaurantsGoodForGroups_True', 'HasTV_True', 'WheelchairAccessible
                     'Monday', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday', 'running_average_past']
 
 labels = ['running_average']
+cv_filename = "cross_validation.csv"
 
-best_model = regressionCV(cv_filename, features)
+regList, rmse_list_test, rmse_list_train, r2_list_test, r2_list_train = regressionCV(cv_filename, features, labels)
 
+rmse_list_test = [3.72120390e-06, 3.72121165e-04, 3.72122407e-02, 2.68890091e-01,
+       2.68890091e-01, 2.68890091e-01]
+
+
+best_model = regList[np.argmin(score_list_test)]
+
+
+#results:
+# >>> rmse_list_test
+# array([3.72174973e-06, 3.72175085e-04, 3.72176580e-02, 2.68906547e-01,
+#        2.68906547e-01, 2.68906547e-01])
+# >>> rmse_list_train
+# array([3.72120390e-06, 3.72121165e-04, 3.72122407e-02, 2.68890091e-01,
+#        2.68890091e-01, 2.68890091e-01])
+# >>> r2_list_test
+# array([ 9.99986158e-01,  9.98615806e-01,  8.61580088e-01, -1.81808026e-04,
+#        -1.81808026e-04, -1.81808026e-04])
+# >>> r2_list_train
+# array([0.99998616, 0.99861607, 0.86160626, 0.        , 0.        ,
+#        0.        ])
 
 # .fit(X_train, y_train)
 # reg.score(X_train, y_train)
