@@ -172,7 +172,7 @@ def factorize_features(features_df_clean):
             features_factor[ft] = factors 
         except:
             # feature_mapping[ft] = feat_map
-            print("hi", ft)
+            # print("hi", ft)
             features_factor[ft] = feat 
     return features_factor, feature_mapping
 
@@ -194,9 +194,9 @@ def ohe_features(features_df_clean):
             feat_ohe.columns  = [ft+"_" + o for o in list(feat_ohe)]
             ohe_list.append(feat_ohe)
         except:
-            print(ft)
+            # print(ft)
             feat_ohe = pd.get_dummies(feat)
-            print(list(feat_ohe))
+            # print(list(feat_ohe))
             feat_ohe.columns  = [ft+"_" + o for o in list(feat_ohe)]
             ohe_list.append(feat_ohe)
             
@@ -216,7 +216,58 @@ def abline(slope, intercept, axes = None):
     plt.plot(x_vals, y_vals, 'r-', color="red")
 
 
-def save_train_test(biz_file, review_file):
+def add_past_features(biz_data, num_days_before = 30):
+    three_month = datetime.timedelta(days = num_days_before)
+    one_week = datetime.timedelta(days = 7)
+    three_days = datetime.timedelta(days = 3)
+
+    biz_data['review_id_past'] = np.array([None]*biz_data.shape[0])
+    biz_data['running_average_past']=  np.array([None]*biz_data.shape[0])
+
+    target_dates = biz_data['date'] - three_month 
+    print("is this taking a long time?")
+    for i in range(len(target_dates)):
+        features_past = biz_data[['review_id', 'running_average']].loc[(biz_data['date'] >= target_dates.iloc[i] - one_week) & (biz_data['date'] <= target_dates.iloc[i] + one_week)]
+        if features_past.size:
+            biz_data['review_id_past'].iloc[i] = features_past['review_id'].tail(1).tolist()[0]
+            biz_data['running_average_past'].iloc[i] = features_past['running_average'].tail(1).tolist()[0]
+    print("I'm done")
+    print(sum(pd.isnull(biz_data['running_average_past'])))
+    biz_data.dropna(axis = 0, how ='any', inplace = True) 
+    return biz_data
+
+
+
+def add_past_time_features(biz_data, num_days_before = 30):
+    three_month = datetime.timedelta(days = num_days_before)
+    one_week = datetime.timedelta(days = 7)
+    three_days = datetime.timedelta(days = 3)
+
+    biz_data['review_id_past'] = np.array([None]*biz_data.shape[0])
+    biz_data['running_average_past']=  np.array([None]*biz_data.shape[0])
+
+    target_dates = biz_data['date'] - three_month 
+    print("is this taking a long time?")
+    for i in range(len(target_dates)):
+        features_past = biz_data[['review_id', 'running_average']].loc[(biz_data['date'] >= target_dates.iloc[i] - one_week) & (biz_data['date'] <= target_dates.iloc[i] + one_week)]
+        if features_past.size:
+            biz_data['review_id_past'].iloc[i] = features_past['review_id'].tail(1).tolist()[0]
+            biz_data['running_average_past'].iloc[i] = features_past['running_average'].tail(1).tolist()[0]
+    print("I'm done")
+    print(sum(pd.isnull(biz_data['running_average_past'])))
+    biz_data.dropna(axis = 0, how ='any', inplace = True) 
+    return biz_data
+
+
+def add_past_revCount_features(biz_data, num_reviews_before = 20):
+    biz_data['review_id_past'] = np.array([None]*num_reviews_before + biz_data['review_id'].iloc[num_reviews_before:].tolist())
+    biz_data['running_average_past']=  np.array([None]*num_reviews_before + biz_data['running_average'].iloc[num_reviews_before:].tolist())
+    biz_data.dropna(axis = 0, how ='any', inplace = True) 
+    return biz_data
+
+
+
+def save_train_test(biz_file, review_file, num_reviews_before = 20):
     biz = pd.read_csv(DIRECTORY+biz_file, encoding= "utf-8")
 
     biz_id = biz['business_id']
@@ -232,16 +283,21 @@ def save_train_test(biz_file, review_file):
 
     all_data = linked_featues_ohe.merge(review_sorted, left_on = 'business_id', right_on = 'business_id')
 
-    all_biz = np.unique(all_data['business_id'])
-
     all_train_y = []
     all_test_y = []
     all_train_X = []
     all_test_X = []
 
-    for biz_id in all_biz:
-        biz_data = all_data[all_data['business_id'] == biz_id]
-        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id']+['business_id']]
+    all_biz, indx = np.unique(all_data['business_id'], return_index=True)
+    indx = sorted(indx) + [all_data.shape[0]]
+    indx_ranges = [(indx[i], indx[i+1]) for i in range(len(indx)-1)]
+    for indx_r in indx_ranges:
+        biz_data = all_data.iloc[indx_r[0]:indx_r[1]]
+        print(np.unique(biz_data['business_id']))
+        print("before:", biz_data.shape)
+        biz_data = add_past_revCount_features(biz_data, num_reviews_before)
+        print("after:", biz_data.shape)
+        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id', 'business_id'] + ['review_id_past', 'running_average_past']]
         biz_y = biz_data['running_average']
         biz_y_train, biz_y_test = biz_y[:int(len(biz_y)*0.8)], biz_y[int(len(biz_y)*0.8):]
         biz_X_train, biz_X_test = biz_X.iloc[:int(len(biz_y)*0.8)], biz_X.iloc[int(len(biz_y)*0.8):]
@@ -260,3 +316,8 @@ def save_train_test(biz_file, review_file):
     all_test =  pd.concat([all_test_X_pd, all_test_y_pd], axis = 1)
     all_train.to_csv(DIRECTORY+"training.csv")
     all_test.to_csv(DIRECTORY+"testing.csv")
+
+
+
+biz_file = 'business.csv'
+review_file = 'review.csv'
