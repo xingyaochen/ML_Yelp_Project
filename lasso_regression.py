@@ -24,11 +24,11 @@ from crossval import *
 def regressionCV(cv_filename, features, labels):
     cross_validation = pd.read_csv(DIRECTORY+cv_filename, encoding= "utf-8")
     numFolds = int(np.max(cross_validation['foldNum']))
-    alphas = [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000]
-    alpha_scores_train = []
-    alpha_scores_test= []
+    alphas = [0.001, 0.01, 0.1, 1, 10, 100]
+    alpha_scores_train = np.empty((len(alphas), numFolds))
+    alpha_scores_test= np.empty((len(alphas), numFolds))
     regList = [Lasso(alpha = a, random_state=0) for a in alphas]
-    for i in range(numFolds+1):
+    for i in range(numFolds-1):
         print("Running CV fold", i)
         test_CV = cross_validation.loc[cross_validation['foldNum']==i]
         train_CV = cross_validation.loc[cross_validation['foldNum']!=i]
@@ -45,9 +45,12 @@ def regressionCV(cv_filename, features, labels):
             reg_m.fit(train_CV_X, train_CV_y)
             rmse_train.append(metrics.mean_squared_error(train_CV_y, reg_m.predict(train_CV_X)))
             rmse_test.append(metrics.mean_squared_error(test_CV_y, reg_m.predict(test_CV_X)))
-        alpha_scores_train.append(np.mean(rmse_train))
-        alpha_scores_test.append(np.mean(rmse_test))
-    return regList[np.argmax(alpha_scores_test)]
+        
+        alpha_scores_train[:,i] = rmse_train
+        alpha_scores_test[:,i] = rmse_test 
+    score_list_test = np.mean(alpha_scores_test, axis = 1)
+    score_list_train = np.mean(alpha_scores_train, axis = 1)
+    return regList[np.argmax(score_list_test)], score_list_test, score_list_train
 
 
 

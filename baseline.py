@@ -34,8 +34,7 @@ features = ['RestaurantsGoodForGroups_True', 'HasTV_True', 'WheelchairAccessible
 labels = ['running_average']
 
 cv_filename = "cross_validation.csv"
-best_model = regressionCV(cv_filename, features, labels)
-print(best_model.get_params())
+best_model, score_list_test, score_list_train = regressionCV(cv_filename, features, labels)
 
 
 # .fit(X_train, y_train)
