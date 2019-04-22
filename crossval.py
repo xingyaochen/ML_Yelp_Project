@@ -10,7 +10,7 @@ from explore import *
 #train on %50 of training data and then validate on following 10%
 # choose random int between 0 and 40 train on 50% of all reviews starting from that point
 # then validate on 10% of reviews directly after
-currdata = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
+# currdata = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
 
 def crossValidation(train_data, numfolds):
     """Returns list where each element is a list containing a 
@@ -30,12 +30,16 @@ def getBizIntervals(startVals, train_data):
     """For each business in train_data, grabs 50% of that business' reviews
     starting at startperc and then grabs the following 10% to be used as validation"""
     #get list of businesses
-    all_biz = np.unique(train_data['business_id'])
+    all_biz, indx = np.unique(train_data['business_id'], return_index=True)
+    indx = sorted(indx) + [train_data.shape[0]]
+    indx_ranges = [(indx[i], indx[i+1]) for i in range(len(indx)-1)]
     #for each business separate the correct number of reviews
     finaldf = []
-    for biz in all_biz:
-        currentdf = train_data[train_data['business_id'] == biz]
+    for indx_r in indx_ranges:
+        currentdf = train_data.iloc[indx_r[0]:indx_r[1]]
+        print(np.unique(currentdf['business_id']))
         finaldf.append(singleBizInterval(startVals, currentdf))
+        # print(indx_r)
     #put all the reviews back into dataframes
     finaldf = pd.concat(finaldf, axis =0)
     return finaldf
