@@ -19,6 +19,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn import metrics
 from sklearn.dummy import DummyClassifier
 from sklearn.svm import SVC
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def parseReviewDF(df,cumulative_rating=False):
     """
@@ -40,13 +41,14 @@ def parseReviewDF(df,cumulative_rating=False):
         review_text.rename(columns={'average_over_span':'rating'}, inplace=True)
     return review_text
 
-def preprocess(review_text,binary_rating=True):
+def preprocess(review_text_,binary_rating=True,Tfidf=False):
     """
     tokenize each review text into a list of words also add a col for length of the tokenized text.
     Set binary_rating to true if we want to deal with 0(bad) and 1(good) as labels instead of 1-5 scaled ratings
     """
     #calculate the average rating as a dividing line between bad and good rating
     #which we can use as a proxy for positive/negative label
+    review_text=review_text_.copy(deep=True)
     averageRating=review_text["rating"].mean()
 
     #helper function for converting
@@ -54,13 +56,15 @@ def preprocess(review_text,binary_rating=True):
         if rating>=averageRating:
             return 1
         else: return 0
-
+    
     for index_label, row_series in review_text.iterrows():
    # For each row update the 'Bonus' value to it's double
-        tokenizeWords=word_tokenize(row_series['text'])
-        tokenizeWords=removeStopWords(tokenizeWords)
-        tokenizeWords=convertToStem(tokenizeWords)
-        review_text.at[index_label , 'text'] = tokenizeWords
+        if Tfidf==False:
+            #only change text to BOG if Tfidf is false
+            tokenizeWords=word_tokenize(row_series['text'])
+            tokenizeWords=removeStopWords(tokenizeWords)
+            tokenizeWords=convertToStem(tokenizeWords)
+            review_text.at[index_label , 'text'] = tokenizeWords
 
         if binary_rating:
             review_text.at[index_label , 'rating']=changeToBinaryRating(row_series['rating'])
@@ -143,18 +147,26 @@ def extract_feature_vectors(tokenizeWords, word_list) :
     
     return feature_matrix
 
-def analysis(review_text):
+def analysis(review_text,Tfidf=False):
     """
     currently only dealing with polarity as label
     """
-    X=review_text["text"]
+    
+    
+    if Tfidf:
+        tf=TfidfVectorizer()
+        X= tf.fit_transform(review_text["text"])
+    else:
+        X=review_text["text"]
+        #USING BAD OF WORDS
+        dictionary = extract_dictionary(X)
+        X = extract_feature_vectors(X, dictionary)
+
+
     y=review_text["rating"]
     #turning label into numpy array and the X into on-hot numpy array
     y=y.values
-    #USING BAD OF WORDS
-    dictionary = extract_dictionary(X)
-    X = extract_feature_vectors(X, dictionary)
-
+    
     #train test split
   
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
@@ -165,15 +177,15 @@ def analysis(review_text):
     print("MultinomialNB Accuracy:",metrics.accuracy_score(y_test, predicted))
     print("MultinomialNB f1:",metrics.f1_score(y_test,predicted))
 
-    linear=SVC(C=1,kernel='linear')
-    linear.fit(X_train,y_train)
-    pred_linear=linear.decision_function(X_test)
-    y_label = np.sign(pred_linear)
-    y_label[y_label==0] = 1 # map points of hyperplane to +1
-    acc=metrics.accuracy_score(y_test,y_label,normalize=True)
-    f1=metrics.f1_score(y_test,y_label)
-    print("linear SVC Accuracy: ",acc)
-    print("linear SVC f1: ",f1)
+    # linear=SVC(C=1,kernel='linear')
+    # linear.fit(X_train,y_train)
+    # pred_linear=linear.decision_function(X_test)
+    # y_label = np.sign(pred_linear)
+    # y_label[y_label==0] = 1 # map points of hyperplane to +1
+    # acc=metrics.accuracy_score(y_test,y_label,normalize=True)
+    # f1=metrics.f1_score(y_test,y_label)
+    # print("linear SVC Accuracy: ",acc)
+    # print("linear SVC f1: ",f1)
     
     # rbf=SVC(C=32,gamma=0.0078125,kernel='rbf')
     # rbf.fit(X_train,y_train)
@@ -192,12 +204,7 @@ def analysis(review_text):
     # plt.ylabel('Number of Review')
     # plt.show()
 
-    # training_set=
-    # sentim_analyzer = SentimentAnalyzer()
-    # if trainer_=="NaiveBayes":
-    #     trainer = NaiveBayesClassifier.train
-    
-    # classifier = sentim_analyzer.train(trainer, training_set)
+ 
 
 
 def main():
@@ -211,10 +218,17 @@ def main():
     sample_review=review[:10000]
     print("Parsing dataframe...")
     review_text=parseReviewDF(sample_review,cumulative_rating=False)
+
+
     print("Preprocess review text and convert to polarity...")
-    review_text=preprocess(review_text)
-    print("Train and predict...")
-    analysis(review_text)
+    bow_review_text=preprocess(review_text)
+    print("Train and predict(BOW)...")
+    analysis(bow_review_text)
+    
+    print("Preprocess review text and convert to polarity...")
+    tfidf_review_text=preprocess(review_text,Tfidf=True)
+    print("Train and predict(TF-IDF)...")
+    analysis(tfidf_review_text,Tfidf=True)
 
 if __name__ == "__main__":
     main()
