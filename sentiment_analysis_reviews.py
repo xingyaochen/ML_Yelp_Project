@@ -173,6 +173,26 @@ def extract_feature_vectors(tokenizeWords, word_list) :
     
     return feature_matrix
 
+def train_model(X_train, y_train, trainer="MultinomialNB"):
+    """
+    trains the classifier
+    """
+    if trainer=="MultinomialNB":
+        clf = MultinomialNB()
+        clf.fit(X_train, y_train)
+
+    if trainer=="LinearSVC":
+        clf=LinearSVC()
+        clf.fit(X_train,y_train)
+    else:
+        raise Exception("WHYYYY???? You only have two options:'MultinomialNB' and 'LinearSVC' ")
+
+    return clf
+
+
+
+
+
 def analysis(review_text,Tfidf=False):
     """
     currently only dealing with polarity as label
@@ -198,13 +218,13 @@ def analysis(review_text,Tfidf=False):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
 
-    clf = MultinomialNB().fit(X_train, y_train)
+    clf = train_model(X_train, y_train, trainer="MultinomialNB")
     predicted= clf.predict(X_test)
     print("MultinomialNB Accuracy:",metrics.accuracy_score(y_test, predicted))
     print("MultinomialNB f1:",metrics.f1_score(y_test,predicted))
 
-    linear=SVC(C=1,kernel='linear')
-    linear.fit(X_train,y_train)
+  
+    linear=train_model(X_train, y_train, trainer="LinearSVC")
     y_label=linear.predict(X_test)
     
     acc=metrics.accuracy_score(y_test,y_label,normalize=True)
