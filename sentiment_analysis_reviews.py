@@ -21,6 +21,32 @@ from sklearn.dummy import DummyClassifier
 from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+def calculateAveragePolarity(business_ids,predicted_polarity):
+    """
+    calculate the average polarity (0,1) 
+    params
+    -----------
+    business_ids:               a pandas df colum, shape (n,)
+    predicted_polarity:         a pandas df column, shape (n,)
+
+    the shape of business_ids and predicted_polarity should be the
+    same dimension so each entry correspond to one review, and there might be many
+    rows with the same business_ids
+
+    return
+    -----------
+    business_sentiment:         a pandas df with shape (x,2) 
+                                    where x is the number of unique businesses
+
+    """
+    busi_idz=business_ids.values
+    polarity=predicted_polarity.values
+    data = pd.DataFrame({'business_ids':busi_idz,'avg_sentiment':polarity})
+    business_sentiment=data.groupby(["business_id"]).mean()
+
+    return business_sentiment
+
+
 def parseReviewDF(df,cumulative_rating=False):
     """
     parse the review pandas df and return a new pandas df with only the text and review_Id
@@ -34,10 +60,10 @@ def parseReviewDF(df,cumulative_rating=False):
     # #read in the review csv
     # review = pd.read_csv(reviewfile, parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
     if cumulative_rating:
-        review_text=df[['review_id','text','running_average']]
+        review_text=df[['business_id','review_id','text','running_average']]
         review_text.rename(columns={'running_average':'rating'}, inplace=True)
     else:
-        review_text=df[['review_id','text','average_over_span']]
+        review_text=df[['business_id','review_id','text','average_over_span']]
         review_text.rename(columns={'average_over_span':'rating'}, inplace=True)
     return review_text
 
@@ -177,15 +203,14 @@ def analysis(review_text,Tfidf=False):
     print("MultinomialNB Accuracy:",metrics.accuracy_score(y_test, predicted))
     print("MultinomialNB f1:",metrics.f1_score(y_test,predicted))
 
-    # linear=SVC(C=1,kernel='linear')
-    # linear.fit(X_train,y_train)
-    # pred_linear=linear.decision_function(X_test)
-    # y_label = np.sign(pred_linear)
-    # y_label[y_label==0] = 1 # map points of hyperplane to +1
-    # acc=metrics.accuracy_score(y_test,y_label,normalize=True)
-    # f1=metrics.f1_score(y_test,y_label)
-    # print("linear SVC Accuracy: ",acc)
-    # print("linear SVC f1: ",f1)
+    linear=SVC(C=1,kernel='linear')
+    linear.fit(X_train,y_train)
+    y_label=linear.predict(X_test)
+    
+    acc=metrics.accuracy_score(y_test,y_label,normalize=True)
+    f1=metrics.f1_score(y_test,y_label)
+    print("linear SVC Accuracy: ",acc)
+    print("linear SVC f1: ",f1)
     
     # rbf=SVC(C=32,gamma=0.0078125,kernel='rbf')
     # rbf.fit(X_train,y_train)
@@ -224,11 +249,11 @@ def main():
     bow_review_text=preprocess(review_text)
     print("Train and predict(BOW)...")
     analysis(bow_review_text)
-    
-    print("Preprocess review text and convert to polarity...")
-    tfidf_review_text=preprocess(review_text,Tfidf=True)
-    print("Train and predict(TF-IDF)...")
-    analysis(tfidf_review_text,Tfidf=True)
+
+    # print("Preprocess review text and convert to polarity...")
+    # tfidf_review_text=preprocess(review_text,Tfidf=True)
+    # print("Train and predict(TF-IDF)...")
+    # analysis(tfidf_review_text,Tfidf=True)
 
 if __name__ == "__main__":
     main()
