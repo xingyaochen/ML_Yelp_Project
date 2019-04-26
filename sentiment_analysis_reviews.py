@@ -181,7 +181,7 @@ def train_model(X_train, y_train, trainer="MultinomialNB"):
         clf = MultinomialNB()
         clf.fit(X_train, y_train)
 
-    if trainer=="LinearSVC":
+    elif trainer=="LinearSVC":
         clf=LinearSVC()
         clf.fit(X_train,y_train)
     else:
