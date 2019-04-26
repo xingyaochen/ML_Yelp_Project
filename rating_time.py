@@ -19,15 +19,17 @@ def parseRatingOverTime(reviewfile,rolling_span=4):
     # group_biz["running_average"] = group_biz.groupby("business_id", as_index=False).apply(lambda x: x["stars"].expanding().mean())
     running_average= group_biz.groupby("business_id", as_index=False).apply(lambda x: x["stars"].expanding().mean())
     group_biz["running_average"] = running_average.reset_index(level=0, drop=True)
-    group_biz = group_biz[['business_id','date','average_over_span','running_average', 'review_id']]
-    # reviewfile_name=reviewfile.split(".")[0]
-    # group_biz.to_csv(DIRECTORY+reviewfile_name+"_ratingOverTime.csv", encoding="latin-1", index=False)
-    return group_biz
+    group_biz = group_biz[['business_id','date','average_over_span','running_average', 'review_id','text']]
+    reviewfile_name=reviewfile.split(".")[0]
+    group_biz.to_csv(reviewfile_name+"_ratingOverTime.csv", encoding="latin-1", index=False)
+    # return group_biz
     
 
 def main():
     reviewfile = DIRECTORY + "review.csv"
+    # group_biz=
     parseRatingOverTime(reviewfile)
+    
 
 if __name__ == "__main__":
     main()
