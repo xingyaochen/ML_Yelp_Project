@@ -20,7 +20,7 @@ from sklearn import metrics
 from sklearn.dummy import DummyClassifier
 from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+from crossval.py import *
 
 def addSentimentToFeature(business_df,business_sentiment):
     """
@@ -196,10 +196,10 @@ def train_model(X_train, y_train, trainer="MultinomialNB"):
     """
     if trainer=="MultinomialNB":
         clf = MultinomialNB()
-        clf.fit(X_train, y_train)
+        clf.fit(X_train, y_train) 
 
     elif trainer=="LinearSVC":
-        clf=LinearSVC()
+        clf=LinearSVC(dual=False)
         clf.fit(X_train,y_train)
     else:
         raise Exception("WHYYYY???? You only have two options:'MultinomialNB' and 'LinearSVC' ")
@@ -266,7 +266,7 @@ def analysis(review_text,Tfidf=False):
     # plt.ylabel('Number of Review')
     # plt.show()
 
-def cv_performance(clf, X, y, kf, metrics=["accuracy"]) :
+def cv_performance(clf, metrics=["accuracy"]) :
     """
     Splits the data, X and y, into k-folds and runs k-fold cross-validation.
     Trains classifier on k-1 folds and tests on the remaining fold.
@@ -287,10 +287,29 @@ def cv_performance(clf, X, y, kf, metrics=["accuracy"]) :
     --------------------
         scores  -- numpy array of shape (m,), average CV performance for each metric
     """
+    #comment out later
+    reviewfile=DIRECTORY + "review_ratingOverTime.csv"
+    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    reviewdict = 
 
-    k = kf.get_n_splits(X, y)
+    crossValFile = DIRECTORY + "crossVal.csv"
+    #get crossvalidation data
+    crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
+
     m = len(metrics)
     scores = np.empty((m, k))
+
+    #loop through sets
+    for currfold in np.unique(crossValdf['foldnum']):
+        train_cv, validate_cv = get_cv_fold(crossValdf, currfold)
+        #make a dictionary out of the review dataframe
+        #make a new dataframe and add columns based on 
+        
+        #get review dataframe for current fold
+
+        
+
+
 
     for k, (train, test) in enumerate(kf.split(X, y)) :
         X_train, X_test, y_train, y_test = X[train], X[test], y[train], y[test]
@@ -330,7 +349,7 @@ def select_param_linear(X, y, kf, metrics=["accuracy"], plot=True) :
     ### ========== TODO : START ========== ###
     # part 3b: for each metric, select optimal hyperparameter using cross-validation
     for j, c in enumerate(C_range):
-        model_svc = SVC(C=c, kernel='linear')
+        model_svc = LinearSVC(dual=False)
         # compute CV scores using cv_performance(...)
         scores[:,j] = cv_performance(model_svc, X, y, kf, metrics)
 
@@ -357,9 +376,9 @@ def select_param_linear(X, y, kf, metrics=["accuracy"], plot=True) :
 
 
 def main():
-    crossValFile = DIRECTORY + "crossVal.csv"
-    #get crossvalidation data
-    crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
+    # crossValFile = DIRECTORY + "crossVal.csv"
+    # #get crossvalidation data
+    # crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
 
     #load in pandas df or csv
     reviewfile=DIRECTORY + "review_ratingOverTime.csv"
