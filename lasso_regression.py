@@ -21,9 +21,19 @@ from crossval import *
 # train_data = train_data.dropna(how = 'any')
 # test_data = test_data.dropna(how = 'any')
 
+def get_cv_fold(cross_validation, fold_num):
+    data_CV = cross_validation.loc[cross_validation['foldNum']==fold_num]
+    train_CV = data_CV.loc[data_CV['set'] == 'training']
+    validate_CV = data_CV.loc[data_CV['set'] == 'validation']
+    print(train_CV.shape, validate_CV.shape)
+    return train_CV, validate_CV
+
+
+
+
 def regressionCV(cv_filename, features, labels):
     cross_validation = pd.read_csv(DIRECTORY+cv_filename, encoding= "utf-8")
-    numFolds = int(np.max(cross_validation['foldNum']))
+    numFolds = np.max(cross_validation['foldNum'])
     alphas = [0.001, 0.01, 0.1, 1, 10, 100]
     rmse_alpha_scores_train = np.empty((len(alphas), numFolds+1))
     rmse_alpha_scores_test= np.empty((len(alphas), numFolds+1))
@@ -33,6 +43,7 @@ def regressionCV(cv_filename, features, labels):
 
     regList = [Lasso(alpha = a, random_state=0) for a in alphas]
     for i in range(numFolds+1):
+        train_CV, validate_CV = get_cv_fold(cross_validation, i)
         print("Running CV fold", i)
         test_CV = cross_validation.loc[cross_validation['foldNum']==i]
         train_CV = cross_validation.loc[cross_validation['foldNum']!=i]
