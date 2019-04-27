@@ -21,6 +21,22 @@ from sklearn.dummy import DummyClassifier
 from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+def addSentimentToFeature(business_df,business_sentiment):
+    """
+    params
+    -----------
+    business_df:               a pandas df shape (n,x) where x is the 
+                                current number of features after one-hot encoding
+    business_sentiment:        a pandas df column, shape (n,2), first column business id
+                                second column sentiment polarity within [0,1]
+
+    return
+    -----------
+    full_feature:                a pandas df with shape (n,x+1) 
+
+    """
+    return pd.merge(business_df, business_sentiment, on='business_ids', how='outer')
+
 def calculateAveragePolarity(business_ids,predicted_polarity):
     """
     calculate the average polarity (0,1) 
