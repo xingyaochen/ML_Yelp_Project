@@ -21,6 +21,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+
 def addSentimentToFeature(business_df,business_sentiment):
     """
     params
@@ -265,10 +266,101 @@ def analysis(review_text,Tfidf=False):
     # plt.ylabel('Number of Review')
     # plt.show()
 
+def cv_performance(clf, X, y, kf, metrics=["accuracy"]) :
+    """
+    Splits the data, X and y, into k-folds and runs k-fold cross-validation.
+    Trains classifier on k-1 folds and tests on the remaining fold.
+    Calculates the k-fold cross-validation performance metric for classifier
+    by averaging the performance across folds.
+    
+    Parameters
+    --------------------
+        clf     -- classifier (instance of SVC)
+        X       -- numpy array of shape (n,d), feature vectors
+                     n = number of examples
+                     d = number of features
+        y       -- numpy array of shape (n,), binary labels {1,-1}
+        kf      -- model_selection.KFold or model_selection.StratifiedKFold
+        metrics -- list of m strings, metrics
+    
+    Returns
+    --------------------
+        scores  -- numpy array of shape (m,), average CV performance for each metric
+    """
+
+    k = kf.get_n_splits(X, y)
+    m = len(metrics)
+    scores = np.empty((m, k))
+
+    for k, (train, test) in enumerate(kf.split(X, y)) :
+        X_train, X_test, y_train, y_test = X[train], X[test], y[train], y[test]
+        clf.fit(X_train, y_train)
+        # use SVC.decision_function to make ``continuous-valued'' predictions
+        y_pred = clf.decision_function(X_test)
+        for m, metric in enumerate(metrics) :
+            score = performance(y_test, y_pred, metric)
+            scores[m,k] = score
+            
+    return scores.mean(axis=1) # average across columns
+
+def select_param_linear(X, y, kf, metrics=["accuracy"], plot=True) :
+    """
+    Sweeps different settings for the hyperparameter of a linear-kernel SVM,
+    calculating the k-fold CV performance for each setting and metric,
+    then selects the hyperparameter that maximizes the average performance for each metric.
+    
+    Parameters
+    --------------------
+        X       -- numpy array of shape (n,d), feature vectors
+                     n = number of examples
+                     d = number of features
+        y       -- numpy array of shape (n,), binary labels {1,-1}
+        kf      -- model_selection.KFold or model_selection.StratifiedKFold
+        metrics -- list of m strings, metrics
+        plot    -- boolean, make a plot
+    
+    Returns
+    --------------------
+        params  -- list of m floats, optimal hyperparameter C for each metric
+    """
+    
+    C_range = 10.0 ** np.arange(-3, 3)
+    scores = np.empty((len(metrics), len(C_range)))
+    
+    ### ========== TODO : START ========== ###
+    # part 3b: for each metric, select optimal hyperparameter using cross-validation
+    for j, c in enumerate(C_range):
+        model_svc = SVC(C=c, kernel='linear')
+        # compute CV scores using cv_performance(...)
+        scores[:,j] = cv_performance(model_svc, X, y, kf, metrics)
+
+    # get best hyperparameters
+    best_params_ind = np.argmax(scores,  axis=1)    # dummy, okay to change
+    best_params = C_range[best_params_ind]
+    ### ========== TODO : END ========== ###
+    
+    # plot
+    if plot:
+        plt.figure()
+        ax = plt.gca()
+        ax.set_ylim(0, 1)
+        ax.set_xlabel("C")
+        ax.set_ylabel("score")
+        for m, metric in enumerate(metrics) :
+            lineplot(C_range, scores[m,:], metric)
+        plt.legend()
+        plt.savefig("linear_param_select.png")
+        plt.close()
+    
+    return best_params
  
 
 
 def main():
+    crossValFile = DIRECTORY + "crossVal.csv"
+    #get crossvalidation data
+    crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
+
     #load in pandas df or csv
     reviewfile=DIRECTORY + "review_ratingOverTime.csv"
     # dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
