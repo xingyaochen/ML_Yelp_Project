@@ -20,7 +20,7 @@ from sklearn import metrics
 from sklearn.dummy import DummyClassifier
 from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
-from crossval.py import *
+from crossval import *
 
 def addSentimentToFeature(business_df,business_sentiment):
     """
@@ -266,7 +266,7 @@ def analysis(review_text,Tfidf=False):
     # plt.ylabel('Number of Review')
     # plt.show()
 
-def cv_performance(clf, metrics=["accuracy"]) :
+def cv_performance(metrics=["accuracy"]) :
     """
     Splits the data, X and y, into k-folds and runs k-fold cross-validation.
     Trains classifier on k-1 folds and tests on the remaining fold.
@@ -290,88 +290,105 @@ def cv_performance(clf, metrics=["accuracy"]) :
     #comment out later
     reviewfile=DIRECTORY + "review_ratingOverTime.csv"
     reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
-    reviewdict = 
+
+    #do preprocessing here !!!!
+
+    #make a nested dictionary of a reviews, first key is column you want and second is review id
+    reviewdict = reviewdf.set_index('review_id').to_dict()
+    # print(reviewdict['text']['lgpSS6UsKYIvnQaw8JwHlQ'])
+    # print(reviewdict['running_average']['lgpSS6UsKYIvnQaw8JwHlQ'])
 
     crossValFile = DIRECTORY + "crossVal.csv"
     #get crossvalidation data
     crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
 
-    m = len(metrics)
-    scores = np.empty((m, k))
-
     #loop through sets
-    for currfold in np.unique(crossValdf['foldnum']):
+    for currfold in np.unique(crossValdf['foldNum']):
+        train_data = []
+        validation_data = []
+
+        #get review_ids from each set
+        print('training and validation sizes for current sets are')
         train_cv, validate_cv = get_cv_fold(crossValdf, currfold)
-        #make a dictionary out of the review dataframe
-        #make a new dataframe and add columns based on 
+        review_id_train = train_cv['review_id']
+        review_id_validate = validate_cv['review_id']
+
+        #match review_ids and put them in correct dataframe
+        for index, row in train_cv.iterrows():
+            curr_id = row['review_id']
+            train_data.append([reviewdict['text'][curr_id],reviewdict['running_average'][curr_id]])
+        for index, row in validate_cv.iterrows():
+            curr_id = row['review_id']
+            validation_data.append([reviewdict['text'][curr_id],reviewdict['running_average'][curr_id]])
+        traindf = pd.DataFrame(train_data, columns = ['text', 'running_average'])
+        validatedf = pd.DataFrame(validation_data, columns = ['text', 'running_average'])
+        traindf.to_csv(DIRECTORY+"traindf"+str(currfold)+".csv", encoding="latin-1", index=False)
+        validatedf.to_csv(DIRECTORY+"validatedf"+str(currfold)+".csv", encoding="latin-1", index=False)
         
-        #get review dataframe for current fold
-
-        
 
 
-
-    for k, (train, test) in enumerate(kf.split(X, y)) :
-        X_train, X_test, y_train, y_test = X[train], X[test], y[train], y[test]
-        clf.fit(X_train, y_train)
-        # use SVC.decision_function to make ``continuous-valued'' predictions
-        y_pred = clf.decision_function(X_test)
-        for m, metric in enumerate(metrics) :
-            score = performance(y_test, y_pred, metric)
-            scores[m,k] = score
+    #leftovers from function I repurposed from
+    # for k, (train, test) in enumerate(kf.split(X, y)) :
+    #     X_train, X_test, y_train, y_test = X[train], X[test], y[train], y[test]
+    #     clf.fit(X_train, y_train)
+    #     # use SVC.decision_function to make ``continuous-valued'' predictions
+    #     y_pred = clf.decision_function(X_test)
+    #     for m, metric in enumerate(metrics) :
+    #         score = performance(y_test, y_pred, metric)
+    #         scores[m,k] = score
             
-    return scores.mean(axis=1) # average across columns
+    # return scores.mean(axis=1) # average across columns
 
-def select_param_linear(X, y, kf, metrics=["accuracy"], plot=True) :
-    """
-    Sweeps different settings for the hyperparameter of a linear-kernel SVM,
-    calculating the k-fold CV performance for each setting and metric,
-    then selects the hyperparameter that maximizes the average performance for each metric.
+# def select_param_linear(X, y, kf, metrics=["accuracy"], plot=True) :
+#     """
+#     Sweeps different settings for the hyperparameter of a linear-kernel SVM,
+#     calculating the k-fold CV performance for each setting and metric,
+#     then selects the hyperparameter that maximizes the average performance for each metric.
     
-    Parameters
-    --------------------
-        X       -- numpy array of shape (n,d), feature vectors
-                     n = number of examples
-                     d = number of features
-        y       -- numpy array of shape (n,), binary labels {1,-1}
-        kf      -- model_selection.KFold or model_selection.StratifiedKFold
-        metrics -- list of m strings, metrics
-        plot    -- boolean, make a plot
+#     Parameters
+#     --------------------
+#         X       -- numpy array of shape (n,d), feature vectors
+#                      n = number of examples
+#                      d = number of features
+#         y       -- numpy array of shape (n,), binary labels {1,-1}
+#         kf      -- model_selection.KFold or model_selection.StratifiedKFold
+#         metrics -- list of m strings, metrics
+#         plot    -- boolean, make a plot
     
-    Returns
-    --------------------
-        params  -- list of m floats, optimal hyperparameter C for each metric
-    """
+#     Returns
+#     --------------------
+#         params  -- list of m floats, optimal hyperparameter C for each metric
+#     """
     
-    C_range = 10.0 ** np.arange(-3, 3)
-    scores = np.empty((len(metrics), len(C_range)))
+#     C_range = 10.0 ** np.arange(-3, 3)
+#     scores = np.empty((len(metrics), len(C_range)))
     
-    ### ========== TODO : START ========== ###
-    # part 3b: for each metric, select optimal hyperparameter using cross-validation
-    for j, c in enumerate(C_range):
-        model_svc = LinearSVC(dual=False)
-        # compute CV scores using cv_performance(...)
-        scores[:,j] = cv_performance(model_svc, X, y, kf, metrics)
+#     ### ========== TODO : START ========== ###
+#     # part 3b: for each metric, select optimal hyperparameter using cross-validation
+#     for j, c in enumerate(C_range):
+#         model_svc = LinearSVC(dual=False)
+#         # compute CV scores using cv_performance(...)
+#         scores[:,j] = cv_performance(model_svc, X, y, kf, metrics)
 
-    # get best hyperparameters
-    best_params_ind = np.argmax(scores,  axis=1)    # dummy, okay to change
-    best_params = C_range[best_params_ind]
-    ### ========== TODO : END ========== ###
+#     # get best hyperparameters
+#     best_params_ind = np.argmax(scores,  axis=1)    # dummy, okay to change
+#     best_params = C_range[best_params_ind]
+#     ### ========== TODO : END ========== ###
     
-    # plot
-    if plot:
-        plt.figure()
-        ax = plt.gca()
-        ax.set_ylim(0, 1)
-        ax.set_xlabel("C")
-        ax.set_ylabel("score")
-        for m, metric in enumerate(metrics) :
-            lineplot(C_range, scores[m,:], metric)
-        plt.legend()
-        plt.savefig("linear_param_select.png")
-        plt.close()
+#     # plot
+#     if plot:
+#         plt.figure()
+#         ax = plt.gca()
+#         ax.set_ylim(0, 1)
+#         ax.set_xlabel("C")
+#         ax.set_ylabel("score")
+#         for m, metric in enumerate(metrics) :
+#             lineplot(C_range, scores[m,:], metric)
+#         plt.legend()
+#         plt.savefig("linear_param_select.png")
+#         plt.close()
     
-    return best_params
+#     return best_params
  
 
 
@@ -379,7 +396,8 @@ def main():
     # crossValFile = DIRECTORY + "crossVal.csv"
     # #get crossvalidation data
     # crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
-
+    cv_performance()
+    print('done!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     #load in pandas df or csv
     reviewfile=DIRECTORY + "review_ratingOverTime.csv"
     # dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
