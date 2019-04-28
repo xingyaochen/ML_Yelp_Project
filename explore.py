@@ -207,15 +207,6 @@ def ohe_features(features_df_clean):
     return features_ohe_cont
 
 
-def abline(slope, intercept, axes = None):
-    """Plot a line from slope and intercept"""
-    if not axes:
-        axes = plt.gca()
-    x_vals = np.array(axes.get_xlim())
-    y_vals = intercept + slope * x_vals
-    plt.plot(x_vals, y_vals, 'r-', color="red")
-
-
 def add_past_features(biz_data, num_days_before = 30):
     three_month = datetime.timedelta(days = num_days_before)
     one_week = datetime.timedelta(days = 7)
@@ -259,15 +250,16 @@ def add_past_time_features(biz_data, num_days_before = 30):
     return biz_data
 
 
-def add_past_revCount_features(biz_data, num_reviews_before = 20):
+def add_past_revCount_features(biz_data, num_reviews_before = 30):
     biz_data['review_id_past'] = np.array([None]*num_reviews_before + biz_data['review_id'].iloc[num_reviews_before:].tolist())
+    biz_data['text_past'] = np.array([None]*num_reviews_before + biz_data['text'].iloc[num_reviews_before:].tolist())
     biz_data['running_average_past']=  np.array([None]*num_reviews_before + biz_data['running_average'].iloc[num_reviews_before:].tolist())
     biz_data.dropna(axis = 0, how ='any', inplace = True) 
     return biz_data
 
 
 
-def save_train_test(biz_file, review_file, num_reviews_before = 20):
+def save_train_test(biz_file, review_file, num_reviews_before = 100):
     biz = pd.read_csv(DIRECTORY+biz_file, encoding= "utf-8")
 
     biz_id = biz['business_id']
@@ -282,7 +274,10 @@ def save_train_test(biz_file, review_file, num_reviews_before = 20):
     review_sorted = review.sort_values(by = ['business_id', 'date'])
 
     all_data = linked_featues_ohe.merge(review_sorted, left_on = 'business_id', right_on = 'business_id')
-
+    keepcol = list(all_data)
+    keepcol.remove('average_over_span')
+    all_data = all_data[keepcol]
+    all_data.dropna( inplace= True)
     all_train_y = []
     all_test_y = []
     all_train_X = []
@@ -293,11 +288,11 @@ def save_train_test(biz_file, review_file, num_reviews_before = 20):
     indx_ranges = [(indx[i], indx[i+1]) for i in range(len(indx)-1)]
     for indx_r in indx_ranges:
         biz_data = all_data.iloc[indx_r[0]:indx_r[1]]
-        print(np.unique(biz_data['business_id']))
-        print("before:", biz_data.shape)
+        # print(np.unique(biz_data['business_id']))
+        # print("before:", biz_data.shape)
         biz_data = add_past_revCount_features(biz_data, num_reviews_before)
-        print("after:", biz_data.shape)
-        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id', 'business_id'] + ['review_id_past', 'running_average_past']]
+        # print("after:", biz_data.shape)
+        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id', 'text', 'business_id'] + ['review_id_past', 'text_past', 'running_average_past']]
         biz_y = biz_data['running_average']
         biz_y_train, biz_y_test = biz_y[:int(len(biz_y)*0.8)], biz_y[int(len(biz_y)*0.8):]
         biz_X_train, biz_X_test = biz_X.iloc[:int(len(biz_y)*0.8)], biz_X.iloc[int(len(biz_y)*0.8):]
@@ -314,10 +309,20 @@ def save_train_test(biz_file, review_file, num_reviews_before = 20):
     all_test_y_pd  = pd.concat(all_test_y, axis = 0)
 
     all_test =  pd.concat([all_test_X_pd, all_test_y_pd], axis = 1)
+    print(list(all_test))
     all_train.to_csv(DIRECTORY+"training.csv")
     all_test.to_csv(DIRECTORY+"testing.csv")
+    return all_train, all_test
 
 
+def main():
+    biz_file = 'filtered_business.csv'
+    review_file = 'review.csv'
+    all_train, all_test = save_train_test(biz_file, review_file, num_reviews_before = 100)
+    print(all_train.shape)
+if __name__ == "__main__":
+    # main()
+    pass
 
-biz_file = 'business.csv'
+biz_file = 'filtered_business.csv'
 review_file = 'review.csv'
