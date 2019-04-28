@@ -100,6 +100,7 @@ def inTimeValidation(currData, percValidate):
     for indx_r in ind_validate:
         currentdf = currData.iloc[indx_r[0]:indx_r[1]]
         finalValidate.append(currentdf)
+    #turn each set into a dataframe
     finalValidate = pd.concat(finalValidate)
     finalTrain.to_csv(DIRECTORY+"inTimeTrain.csv", encoding="latin-1", index=False)
     finalValidate.to_csv(DIRECTORY+"inTimeValidate.csv", encoding="latin-1", index=False)
@@ -111,7 +112,7 @@ def main():
     # folds = 4
     # crossValidation(currdata, folds)
     #70/30 split
-    percValidate = .01
+    percValidate = .3
     inTimeValidation(currData, percValidate)
 
 
