@@ -15,10 +15,13 @@ from constants import *
 import csv
 import rating_time
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report
+from sklearn.svm import SVC
+from sklearn.model_selection import cross_val_score
 from sklearn.naive_bayes import MultinomialNB
 from sklearn import metrics
 from sklearn.dummy import DummyClassifier
-from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import TfidfVectorizer
 from crossval import get_cv_fold
 
@@ -257,30 +260,10 @@ def train_model(X_train, y_train, trainer="MultinomialNB"):
 
 
 
-def analysis(review_text,Tfidf=False):
+def analysis(X_train, X_test, y_train, y_test,Tfidf=False):
     """
     currently only dealing with polarity as label
     """
-    
-    
-    if Tfidf:
-        tf=TfidfVectorizer()
-        X= tf.fit_transform(review_text["text"])
-    else:
-        X=review_text["text"]
-        #USING BAD OF WORDS
-        dictionary = extract_dictionary(X)
-        X = extract_feature_vectors(X, dictionary)
-
-
-    y=review_text["rating"]
-    #turning label into numpy array and the X into on-hot numpy array
-    y=y.values
-    
-    #train test split
-  
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-
 
     clf = train_model(X_train, y_train, trainer="MultinomialNB")
     predicted= clf.predict(X_test)
@@ -298,106 +281,96 @@ def analysis(review_text,Tfidf=False):
     
  
 
-def cross_validation(clf,metrics=["accuracy","f1_score"],Tfidf=False) :
-    """
-    Splits the data, X and y, into k-folds and runs k-fold cross-validation.
-    Trains classifier on k-1 folds and tests on the remaining fold.
-    Calculates the k-fold cross-validation performance metric for classifier
-    by averaging the performance across folds.
+def cross_validation_SVM(X_train,x_test,y_train,y_test,fold=5) :
+
     
-    Parameters
-    --------------------
-        clf     -- classifier (instance of SVC)
-        X       -- numpy array of shape (n,d), feature vectors
-                     n = number of examples
-                     d = number of features
-        y       -- numpy array of shape (n,), binary labels {1,-1}
-        kf      -- model_selection.KFold or model_selection.StratifiedKFold
-        metrics -- list of m strings, metrics
+    #---------------------------------------------------------------
+    #grid search SVM
+    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
+                     'C': [1, 10, 100, 1000]},
+                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]},]
+    scores = ['accuracy', 'f1']
+    output=[]
+    for score in scores:
+
+        print("# Tuning hyper-parameters for %s" % score)
+        print()
+
+        clf = GridSearchCV(SVC(), tuned_parameters, cv=fold,
+                        scoring='%s_macro' % score)
+        clf.fit(X_train, y_train)
+
+        print("Best parameters set found on development set:")
+        print()
+        print(clf.best_params_)
+      
+        print("Best score:")
+        print()
+        print(clf.best_score_ )
+
+        output.append((clf.best_score_,clf.best_params_))
+        print("Grid scores on development set:")
+        print()
+        means = clf.cv_results_['mean_test_score']
+        stds = clf.cv_results_['std_test_score']
+        for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+            print("%0.3f (+/-%0.03f) for %r"
+                % (mean, std * 2, params))
+        print()
+
+        print("Detailed classification report:")
+        print()
+        print("The model is trained on the full development set.")
+        print("The scores are computed on the full evaluation set.")
+        print()
+        y_true, y_pred = y_test, clf.predict(X_test)
+        print(classification_report(y_true, y_pred))
+        print()
     
-    Returns
-    --------------------
-        scores  -- numpy array of shape (m,), average CV performance for each metric
-    """
-    #comment out later
-    reviewfile=DIRECTORY + "review_ratingOverTime.csv"
-    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
-
-    #do preprocessing here !!!!
-    print('preprocessing')
-    reviewdf=parseReviewDF(reviewdf)
-    print('reviewsparsed')
-    #using BoW
- 
-    if Tfidf==False:
-        reviewdf=preprocess(reviewdf,Tfidf=False)
-        texts=reviewdf["text"]
-        print('extracting dictionary')
-        #USING BAD OF WORDS
-        dictionary = extract_dictionary(texts)
-        print('bow')
-        bow=extract_feature_vectors(texts,dictionary)
-        print('update')
-        reviewdf.update({"text":bow})
-    if Tfidf==True:
-        reviewdf=preprocess(reviewdf,Tfidf=True)
-        tf=TfidfVectorizer()
-        X= tf.fit_transform(reviewdf["text"])
-        reviewdf.update({"text":X})
-    print(reviewdf["rating"].value_counts())
-
-    print('converting dictionary')
-    #make a nested dictionary of a reviews, first key is column you want and second is review id
-    reviewdict = reviewdf.set_index('review_id').to_dict()
-    return cv_performance(clf,reviewdict,metrics)
+    return output
     
+
     
-    #----------------------------------------------------------
-    #CROSS VALIDATION BELOW
-def cv_performance(clf,reviewdict,metrics=["accuracy","f1_score"]) :
-    print('starting crossvalidation')
+def cross_validation_MultinomialNB(X_train,x_test,y_train,y_test,fold=5):
+    tuned_parameters={'clf__alpha': [1, 1e-1, 1e-2]}
+    scores = ['accuracy', 'f1']
+    output=[]
+    for score in scores:
+        print("# Tuning hyper-parameters for %s" % score)
+        print()
 
-    crossValFile = DIRECTORY + "crossVal.csv"
-    #get crossvalidation data
-    crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
-    m = len(metrics)
-    k=len(np.unique(crossValdf['foldNum']))
-    scores = np.empty((m, k))
-    #For each fold
-    for currfold in np.unique(crossValdf['foldNum']):
-        print(str(currfold))
-        #get its training set and validation set
-        train_data = []
-        validation_data = []
+        clf = GridSearchCV(MultinomialNB(), tuned_parameters, cv=fold,
+                        scoring='%s_macro' % score)
+        clf.fit(X_train, y_train)
 
-        #get the segments of data
-        train_cv, validate_cv = get_cv_fold(crossValdf, currfold)
+        print("Best parameters set found on development set:")
+        print()
+        print(clf.best_params_)
+      
+        print("Best score:")
+        print()
+        print(clf.best_score_ )
 
+        output.append((clf.best_score_,clf.best_params_))
+        print("Grid scores on development set:")
+        print()
+        means = clf.cv_results_['mean_test_score']
+        stds = clf.cv_results_['std_test_score']
+        for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+            print("%0.3f (+/-%0.03f) for %r"
+                % (mean, std * 2, params))
+        print()
 
-        #match review_ids and put them in correct dataframe
-        for index, row in train_cv.iterrows():
-            curr_id = row['review_id']
-            train_data.append([reviewdict['text'][curr_id],reviewdict['rating'][curr_id]])
-        for index, row in validate_cv.iterrows():
-            curr_id = row['review_id']
-            validation_data.append([reviewdict['text'][curr_id],reviewdict['rating'][curr_id]])
-        traindf = pd.DataFrame(train_data, columns = ['text', 'rating'])
-        validatedf = pd.DataFrame(validation_data, columns = ['text', 'rating'])
-        # traindf.to_csv(DIRECTORY+"traindf"+str(currfold)+".csv", encoding="latin-1", index=False)
-        # validatedf.to_csv(DIRECTORY+"validatedf"+str(currfold)+".csv", encoding="latin-1", index=False)
-        y_train=traindf["rating"].values
-        X_train=traindf["text"].values
-        y_val=validatedf["rating"].values
-        X_val=validatedf["text"].values
-        print('fitting clf')
-        clf.fit(X_train,y_train)
-        y_pred= clf.predict(X_val)
-        for m, metric in enumerate(metrics):
-            score = performance(y_val, y_pred, metric)
-            scores[m,k] = score
+        print("Detailed classification report:")
+        print()
+        print("The model is trained on the full development set.")
+        print("The scores are computed on the full evaluation set.")
+        print()
+        y_true, y_pred = y_test, clf.predict(X_test)
+        print(classification_report(y_true, y_pred))
+        print()
 
-    return scores.mean(axis=1)
-        
+    return output
 
 
 def lineplot(x, y, label):
@@ -414,90 +387,60 @@ def lineplot(x, y, label):
     plt.plot(xx, y, linestyle='-', linewidth=2, label=label)
     plt.xticks(xx, x)
 
-def select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False) :
-    """
-    Sweeps different settings for the hyperparameter of a linear-kernel SVM,
-    calculating the k-fold CV performance for each setting and metric,
-    then selects the hyperparameter that maximizes the average performance for each metric.
-    
-    Parameters
-    --------------------
-        X       -- numpy array of shape (n,d), feature vectors
-                     n = number of examples
-                     d = number of features
-        y       -- numpy array of shape (n,), binary labels {1,-1}
-        kf      -- model_selection.KFold or model_selection.StratifiedKFold
-        metrics -- list of m strings, metrics
-        plot    -- boolean, make a plot
-    
-    Returns
-    --------------------
-        params  -- list of m floats, optimal hyperparameter C for each metric
-    """
-    
-    C_range = 10.0 ** np.arange(-3, 3)
-    scores = np.empty((len(metrics), len(C_range)))
-    
-    ### ========== TODO : START ========== ###
-    # part 3b: for each metric, select optimal hyperparameter using cross-validation
-    for j, c in enumerate(C_range):
-        model_svc = LinearSVC(dual=False,C=c, max_iter=500)
-        print('hi')
-        # compute CV scores using cv_performance(...)
-        scores[:,j] = cross_validation(model_svc,metrics,Tfidf=False)
-
-    # get best hyperparameters
-    best_params_ind = np.argmax(scores,  axis=1)    # dummy, okay to change
-    best_params = C_range[best_params_ind]
-    ### ========== TODO : END ========== ###
-    
-    # plot
-    if plot:
-        plt.figure()
-        ax = plt.gca()
-        ax.set_ylim(0, 1)
-        ax.set_xlabel("C")
-        ax.set_ylabel("score")
-        for m, metric in enumerate(metrics) :
-            lineplot(C_range, scores[m,:], metric)
-        plt.legend()
-        plt.savefig("linear_param_select.png")
-        plt.close()
-    print(best_params)
-    return best_params
- 
 
 
 def main():
-    model = MultinomialNB()
-    scores=cross_validation(model,Tfidf=False)
-    print(scores)
-    # crossValFile = DIRECTORY + "crossVal.csv"
-    # #get crossvalidation data
-    # crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
-    # select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False)
-    # print('done!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    # #load in pandas df or csv
-    # reviewfile=DIRECTORY + "review_ratingOverTime.csv"
-    # # dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
-    # #read in the review csv
-    # print("Reading in csv...")
-    # review = pd.read_csv(reviewfile, encoding = "latin-1")
-    # #temporarily slice only a part to test code
-    # sample_review=review[:10000]
-    # print("Parsing dataframe...")
-    # review_text=parseReviewDF(sample_review,cumulative_rating=False)
+    reviewfile=DIRECTORY + "review_ratingOverTime.csv"
+    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    reviewdf=parseReviewDF(reviewdf)
+    #for SVM:
+    SVM_scores=np.zeros((2,3,2))
+    multinomial_scores=np.zeros((2,3,2))
+
+    for i,tfidf in enumerate([True, False]):
+        for j,n in enumerate([1,2,3]):
+    
+            if tfidf==False:
+                reviewdf=preprocess(reviewdf,n_gram=n, Tfidf=False)
+                texts=reviewdf["text"]
+            
+                #USING BAD OF WORDS
+                dictionary = extract_dictionary(texts)
+            
+                X=extract_feature_vectors(texts,dictionary)
+            
+            if tfidf==True:
+                reviewdf=preprocess(reviewdf,n_gram=n,Tfidf=True)
+                tf=TfidfVectorizer()
+                X= tf.fit_transform(reviewdf["text"])
+            
+            y=reviewdf["rating"].values
+            
+            print(reviewdf["rating"].value_counts())
+
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
 
-    # print("Preprocess review text and convert to polarity...")
-    # bow_review_text=preprocess(review_text)
-    # print("Train and predict(BOW)...")
-    # analysis(bow_review_text)
+            output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
+            SVM_scores[i,j,:]=output
 
-    # print("Preprocess review text and convert to polarity...")
-    # tfidf_review_text=preprocess(review_text,Tfidf=True)
-    # print("Train and predict(TF-IDF)...")
-    # analysis(tfidf_review_text,Tfidf=True)
+            output=cross_validation_MultinomialNB( X_train, X_test, y_train, y_test ,fold=5)
+            multinomial_scores[i,j,:]=output
+
+
+    print(SVM_scores)
+    print(multinomial_scores)
+
+    return 
+
+
+    
+    
+
+
+   
+  
+    
 
 if __name__ == "__main__":
     main()
