@@ -252,6 +252,7 @@ def add_past_time_features(biz_data, num_days_before = 30):
 
 def add_past_revCount_features(biz_data, num_reviews_before = 30):
     biz_data['review_id_past'] = np.array([None]*num_reviews_before + biz_data['review_id'].iloc[num_reviews_before:].tolist())
+    biz_data['text_past'] = np.array([None]*num_reviews_before + biz_data['text'].iloc[num_reviews_before:].tolist())
     biz_data['running_average_past']=  np.array([None]*num_reviews_before + biz_data['running_average'].iloc[num_reviews_before:].tolist())
     biz_data.dropna(axis = 0, how ='any', inplace = True) 
     return biz_data
@@ -288,7 +289,7 @@ def save_train_test(biz_file, review_file, num_reviews_before = 100):
         # print("before:", biz_data.shape)
         biz_data = add_past_revCount_features(biz_data, num_reviews_before)
         # print("after:", biz_data.shape)
-        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id', 'business_id'] + ['review_id_past', 'running_average_past']]
+        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id', 'text', 'business_id'] + ['review_id_past', 'text_past', 'running_average_past']]
         biz_y = biz_data['running_average']
         biz_y_train, biz_y_test = biz_y[:int(len(biz_y)*0.8)], biz_y[int(len(biz_y)*0.8):]
         biz_X_train, biz_X_test = biz_X.iloc[:int(len(biz_y)*0.8)], biz_X.iloc[int(len(biz_y)*0.8):]
@@ -308,9 +309,13 @@ def save_train_test(biz_file, review_file, num_reviews_before = 100):
     print(list(all_test))
     all_train.to_csv(DIRECTORY+"training.csv")
     all_test.to_csv(DIRECTORY+"testing.csv")
+    return all_train, all_test
 
 
+def main():
+    biz_file = 'filtered_business.csv'
+    review_file = 'review.csv'
+    all_train, all_test = save_train_test(biz_file, review_file, num_reviews_before = 100)
 
-# biz_file = 'business.csv'
-# review_file = 'review.csv'
-save_train_test(biz_file, review_file, num_reviews_before = 100)
+if __name__ == "__main__":
+    main()
