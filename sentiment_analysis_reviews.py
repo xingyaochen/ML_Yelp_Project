@@ -142,7 +142,7 @@ def preprocess(review_text_,n_gram=1,binary_rating=True,Tfidf=False):
         if rating>=averageRating:
             return 1
         else: return 0
-    
+    print('startig for loop')
     for index_label, row_series in review_text.iterrows():
    # For each row update the 'Bonus' value to it's double
         if Tfidf==False:
@@ -158,10 +158,10 @@ def preprocess(review_text_,n_gram=1,binary_rating=True,Tfidf=False):
                 raise Exception("ONLY support n_gram for n= 1, 2, 3!!!")
             
             review_text.at[index_label , 'text'] = tokenizeWords
-
+    
         if binary_rating:
             review_text.at[index_label , 'rating']=changeToBinaryRating(row_series['rating'])
-   
+    print('done with for loop')
   
     # review_text["sents_length"]=sents_length.reset_index(level=0, drop=True)
 
@@ -324,15 +324,20 @@ def cross_validation(clf,metrics=["accuracy","f1_score"],Tfidf=False) :
     reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
 
     #do preprocessing here !!!!
+    print('preprocessing')
     reviewdf=parseReviewDF(reviewdf)
+    print('reviewsparsed')
     #using BoW
  
     if Tfidf==False:
         reviewdf=preprocess(reviewdf,Tfidf=False)
         texts=reviewdf["text"]
+        print('extracting dictionary')
         #USING BAD OF WORDS
         dictionary = extract_dictionary(texts)
+        print('bow')
         bow=extract_feature_vectors(texts,dictionary)
+        print('update')
         reviewdf.update({"text":bow})
     if Tfidf==True:
         reviewdf=preprocess(reviewdf,Tfidf=True)
@@ -341,7 +346,7 @@ def cross_validation(clf,metrics=["accuracy","f1_score"],Tfidf=False) :
         reviewdf.update({"text":X})
     print(reviewdf["rating"].value_counts())
 
-
+    print('converting dictionary')
     #make a nested dictionary of a reviews, first key is column you want and second is review id
     reviewdict = reviewdf.set_index('review_id').to_dict()
     return cv_performance(clf,reviewdict,metrics)
@@ -350,6 +355,7 @@ def cross_validation(clf,metrics=["accuracy","f1_score"],Tfidf=False) :
     #----------------------------------------------------------
     #CROSS VALIDATION BELOW
 def cv_performance(clf,reviewdict,metrics=["accuracy","f1_score"]) :
+    print('starting crossvalidation')
 
     crossValFile = DIRECTORY + "crossVal.csv"
     #get crossvalidation data
@@ -359,6 +365,7 @@ def cv_performance(clf,reviewdict,metrics=["accuracy","f1_score"]) :
     scores = np.empty((m, k))
     #For each fold
     for currfold in np.unique(crossValdf['foldNum']):
+        print(str(currfold))
         #get its training set and validation set
         train_data = []
         validation_data = []
@@ -382,7 +389,7 @@ def cv_performance(clf,reviewdict,metrics=["accuracy","f1_score"]) :
         X_train=traindf["text"].values
         y_val=validatedf["rating"].values
         X_val=validatedf["text"].values
-
+        print('fitting clf')
         clf.fit(X_train,y_train)
         y_pred= clf.predict(X_val)
         for m, metric in enumerate(metrics):
@@ -434,7 +441,8 @@ def select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False) 
     ### ========== TODO : START ========== ###
     # part 3b: for each metric, select optimal hyperparameter using cross-validation
     for j, c in enumerate(C_range):
-        model_svc = LinearSVC(dual=False,C=c)
+        model_svc = LinearSVC(dual=False,C=c, max_iter=500)
+        print('hi')
         # compute CV scores using cv_performance(...)
         scores[:,j] = cross_validation(model_svc,metrics,Tfidf=False)
 
@@ -461,10 +469,13 @@ def select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False) 
 
 
 def main():
+    model = MultinomialNB()
+    scores=cross_validation(model,Tfidf=False)
+    print(scores)
     # crossValFile = DIRECTORY + "crossVal.csv"
     # #get crossvalidation data
     # crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
-    select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False)
+    # select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False)
     # print('done!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     # #load in pandas df or csv
     # reviewfile=DIRECTORY + "review_ratingOverTime.csv"
