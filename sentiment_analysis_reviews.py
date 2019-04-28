@@ -110,7 +110,7 @@ def calculateAveragePolarity(business_ids,predicted_polarity):
     return business_sentiment
 
 
-def parseReviewDF(df,cumulative_rating=True):
+def parseReviewDF(df):
     """
     parse the review pandas df and return a new pandas df with only the text and review_Id
 
@@ -122,12 +122,10 @@ def parseReviewDF(df,cumulative_rating=True):
     # dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
     # #read in the review csv
     # review = pd.read_csv(reviewfile, parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
-    if cumulative_rating:
-        review_text=df[['business_id','review_id','text','running_average']]
-        review_text.rename(columns={'running_average':'rating'}, inplace=True)
-    else:
-        review_text=df[['business_id','review_id','text','average_over_span']]
-        review_text.rename(columns={'average_over_span':'rating'}, inplace=True)
+ 
+    review_text=df[['business_id','review_id','text_past','running_average_past']]
+    review_text.rename(columns={'running_average_past':'rating','text_past':"text"}, inplace=True)
+   
     return review_text
 
 def preprocess(review_text_,n_gram=1,binary_rating=True,Tfidf=False):
@@ -281,7 +279,7 @@ def analysis(X_train, X_test, y_train, y_test,Tfidf=False):
     
  
 
-def cross_validation_SVM(X_train,x_test,y_train,y_test,fold=5) :
+def cross_validation_SVM(X_train,X_test,y_train,y_test,fold=5) :
 
     
     #---------------------------------------------------------------
@@ -331,7 +329,7 @@ def cross_validation_SVM(X_train,x_test,y_train,y_test,fold=5) :
     
 
     
-def cross_validation_MultinomialNB(X_train,x_test,y_train,y_test,fold=5):
+def cross_validation_MultinomialNB(X_train,X_test,y_train,y_test,fold=5):
     tuned_parameters={'clf__alpha': [1, 1e-1, 1e-2]}
     scores = ['accuracy', 'f1']
     output=[]
@@ -390,7 +388,7 @@ def lineplot(x, y, label):
 
 
 def main():
-    reviewfile=DIRECTORY + "review_ratingOverTime.csv"
+    reviewfile=DIRECTORY + "training.csv"
     reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
     reviewdf=parseReviewDF(reviewdf)
     #for SVM:
