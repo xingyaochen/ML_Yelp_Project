@@ -274,7 +274,10 @@ def save_train_test(biz_file, review_file, num_reviews_before = 100):
     review_sorted = review.sort_values(by = ['business_id', 'date'])
 
     all_data = linked_featues_ohe.merge(review_sorted, left_on = 'business_id', right_on = 'business_id')
-
+    keepcol = list(all_data)
+    keepcol.remove('average_over_span')
+    all_data = all_data[keepcol]
+    all_data.dropna( inplace= True)
     all_train_y = []
     all_test_y = []
     all_train_X = []
@@ -316,6 +319,10 @@ def main():
     biz_file = 'filtered_business.csv'
     review_file = 'review.csv'
     all_train, all_test = save_train_test(biz_file, review_file, num_reviews_before = 100)
-
+    print(all_train.shape)
 if __name__ == "__main__":
-    main()
+    # main()
+    pass
+
+biz_file = 'filtered_business.csv'
+review_file = 'review.csv'
