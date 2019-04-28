@@ -10,7 +10,14 @@ from explore import *
 #train on %50 of training data and then validate on following 10%
 # choose random int between 0 and 40 train on 50% of all reviews starting from that point
 # then validate on 10% of reviews directly after
-# currdata = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
+currdata = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
+folds = 4
+def get_cv_fold(cross_validation, fold_num):
+    data_CV = cross_validation.loc[cross_validation['foldNum']==fold_num]
+    train_CV = data_CV.loc[data_CV['set'] == 'training']
+    validate_CV = data_CV.loc[data_CV['set'] == 'validation']
+    print(train_CV.shape, validate_CV.shape)
+    return train_CV, validate_CV
 
 def crossValidation(train_data, numfolds):
     """Returns list where each element is a list containing a 
@@ -24,7 +31,8 @@ def crossValidation(train_data, numfolds):
         i+= sepVal
     #now get train and validation sets given each start value
     crossValSets = getBizIntervals(startVals, train_data)
-    return crossValSets
+    crossValSets.to_csv(DIRECTORY+"crossVal.csv", encoding="latin-1", index=False)
+    print('done')
 
 def getBizIntervals(startVals, train_data):
     """For each business in train_data, grabs 50% of that business' reviews
@@ -37,7 +45,6 @@ def getBizIntervals(startVals, train_data):
     finaldf = []
     for indx_r in indx_ranges:
         currentdf = train_data.iloc[indx_r[0]:indx_r[1]]
-        print(np.unique(currentdf['business_id']))
         finaldf.append(singleBizInterval(startVals, currentdf))
         # print(indx_r)
     #put all the reviews back into dataframes
@@ -70,3 +77,11 @@ def singleBizInterval(startVals,singleBiz):
         dataList.append(allDat)
     returndf = pd.concat(dataList)
     return returndf
+
+def main():
+    currdata = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
+    folds = 4
+    crossValidation(currdata, folds)
+
+if __name__ == "__main__":
+    main()
