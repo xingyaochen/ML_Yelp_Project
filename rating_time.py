@@ -22,7 +22,7 @@ def parseRatingOverTime(reviewfile,rolling_span=4):
     group_biz = group_biz[['business_id','date','average_over_span','running_average', 'review_id','text']]
     reviewfile_name=reviewfile.split(".")[0]
     group_biz.to_csv(reviewfile_name+"_ratingOverTime.csv", encoding="latin-1", index=False)
-    # return group_biz
+    return group_biz
     
 
 def main():
