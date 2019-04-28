@@ -18,9 +18,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn import metrics
 from sklearn.dummy import DummyClassifier
-from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import TfidfVectorizer
-from crossval import *
+from crossval import get_cv_fold
 
 def performance(y_true, y_pred, metric="accuracy") :
     """
@@ -383,7 +383,7 @@ def cv_performance(clf,reviewdict,metrics=["accuracy","f1_score"]) :
         y_val=validatedf["rating"].values
         X_val=validatedf["text"].values
 
-        clf = model.fit(X_train,y_train)
+        clf.fit(X_train,y_train)
         y_pred= clf.predict(X_val)
         for m, metric in enumerate(metrics):
             score = performance(y_val, y_pred, metric)
@@ -393,22 +393,21 @@ def cv_performance(clf,reviewdict,metrics=["accuracy","f1_score"]) :
         
 
 
- def lineplot(x, y, label):
+def lineplot(x, y, label):
     """
     Make a line plot.
-    
+
     Parameters
     --------------------
         x            -- list of doubles, x values
         y            -- list of doubles, y values
         label        -- string, label for legend
     """
-    
     xx = range(len(x))
     plt.plot(xx, y, linestyle='-', linewidth=2, label=label)
     plt.xticks(xx, x)
 
-def select_param_linear(X, y,metrics=["accuracy","f1_score"], plot=True,Tfidf=False) :
+def select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False) :
     """
     Sweeps different settings for the hyperparameter of a linear-kernel SVM,
     calculating the k-fold CV performance for each setting and metric,
@@ -456,7 +455,7 @@ def select_param_linear(X, y,metrics=["accuracy","f1_score"], plot=True,Tfidf=Fa
         plt.legend()
         plt.savefig("linear_param_select.png")
         plt.close()
-    
+    print(best_params)
     return best_params
  
 
@@ -465,24 +464,24 @@ def main():
     # crossValFile = DIRECTORY + "crossVal.csv"
     # #get crossvalidation data
     # crossValdf = pd.read_csv(crossValFile, encoding = "latin-1")
-    cv_performance()
-    print('done!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    #load in pandas df or csv
-    reviewfile=DIRECTORY + "review_ratingOverTime.csv"
-    # dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
-    #read in the review csv
-    print("Reading in csv...")
-    review = pd.read_csv(reviewfile, encoding = "latin-1")
-    #temporarily slice only a part to test code
-    sample_review=review[:10000]
-    print("Parsing dataframe...")
-    review_text=parseReviewDF(sample_review,cumulative_rating=False)
+    select_param_linear(metrics=["accuracy","f1_score"], plot=True,Tfidf=False)
+    # print('done!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    # #load in pandas df or csv
+    # reviewfile=DIRECTORY + "review_ratingOverTime.csv"
+    # # dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+    # #read in the review csv
+    # print("Reading in csv...")
+    # review = pd.read_csv(reviewfile, encoding = "latin-1")
+    # #temporarily slice only a part to test code
+    # sample_review=review[:10000]
+    # print("Parsing dataframe...")
+    # review_text=parseReviewDF(sample_review,cumulative_rating=False)
 
 
-    print("Preprocess review text and convert to polarity...")
-    bow_review_text=preprocess(review_text)
-    print("Train and predict(BOW)...")
-    analysis(bow_review_text)
+    # print("Preprocess review text and convert to polarity...")
+    # bow_review_text=preprocess(review_text)
+    # print("Train and predict(BOW)...")
+    # analysis(bow_review_text)
 
     # print("Preprocess review text and convert to polarity...")
     # tfidf_review_text=preprocess(review_text,Tfidf=True)
