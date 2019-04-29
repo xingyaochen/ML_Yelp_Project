@@ -389,8 +389,8 @@ def main():
     all_train, all_test = save_train_test_new(biz_file, review_file, num_reviews_before = 100)
     print(all_train.shape)
 if __name__ == "__main__":
-    # main()
-    pass
+    main()
+    # pass
 
 # biz_file = 'filtered_business.csv'
 # review_file = 'review.csv'

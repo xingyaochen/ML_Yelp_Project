@@ -86,8 +86,8 @@ def main():
     # review_sorted.to_csv(DIRECTORY + "sorted_reviews.csv")
 
 if __name__ == "__main__":
-    pass
-    # main()
+    # pass
+    main()
 
 
 # filterD = {'city': {'Las Vegas'}, 'review_count': 3500, 'categories': {'Food', 'Restaurants','Bars', 'Breakfast', 'Lunch', 'Dinner', 'Eatertainment'}}
