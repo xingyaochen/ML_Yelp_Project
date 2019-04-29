@@ -162,6 +162,8 @@ def preprocess(review_text_,n_gram=1,binary_rating=True,Tfidf=False):
                 raise Exception("ONLY support n_gram for n= 1, 2, 3!!!")
             
             review_text.at[index_label , 'text'] = tokenizeWords
+
+
     
         if binary_rating:
             review_text.at[index_label , 'rating']=changeToBinaryRating(row_series['rating'])
@@ -375,20 +377,73 @@ def cross_validation_MultinomialNB(X_train,X_test,y_train,y_test,fold=5):
 
 
 def main():
-    # reviewfile=DIRECTORY + "training.csv"
-    # reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
-    # reviewdf = reviewdf.dropna()
+    reviewfile=DIRECTORY + "training.csv"
+    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    reviewdf = reviewdf.dropna()
+    reviewdf=parseReviewDF(reviewdf)
+    reviewtext=preprocess(reviewdf,n_gram=1,Tfidf=True)
+    train_text=reviewtext["text"]
+    busi_ids=reviewtext["review_id"].values
 
 
 
-    # testfile=DIRECTORY + "testing.csv"
-    # testdf = pd.read_csv(testfile, encoding = "latin-1")
-    # testdf = testdf.dropna()
-    # testdf=parseReviewDF(testdf)
-    # testtext=preprocess(testdf,n_gram=1, Tfidf=True)
-    # test_texts=testtext["text"]
-    # reviewdf=parseReviewDF(reviewdf)
+    testfile=DIRECTORY + "testing.csv"
+    testdf = pd.read_csv(testfile, encoding = "latin-1")
+    testdf = testdf.dropna()
+    testdf=parseReviewDF(testdf)
+    testtext=preprocess(testdf,n_gram=1, Tfidf=True)
+    test_texts=testtext["text"]
+    busi_ids_test=testtext["review_id"].values
+    
+    #WRITE PREDICTIONS
+    best_clf=SVC(C=1.0,kernel="linear")
+
+    
+    
+
+    combined_review=pd.concat([train_text,test_texts],axis=0)
+    tf=TfidfVectorizer()
+    combined_X= tf.fit_transform(combined_review)
+
+    #unpack combined tranformation
+    train_text=combined_X[:reviewtext.shape[0]]
+    test_texts=combined_X[reviewtext.shape[0]:]
+
+
+#down sample for training 
+#transformed train set
+    print(reviewtext["rating"].value_counts())
+
+    transformed_train_data=pd.DataFrame({"text":train_text,"rating":reviewtext["rating"].values})
+  
+
+    negative_data=transformed_train_data[transformed_train_data["rating"]==0]
+    print("negative data shape")
+    print(negative_data.shape)
+    print(negative_data.head)
+    pos_data=transformed_train_data[transformed_train_data["rating"]==1]
+    # print(pos_data.head)
+    pos_data = pos_data.sample(negative_data.shape[0], replace=True)
+
+    balanced_train_text = pd.concat([pos_data, negative_data], axis=0)
+    # print(balanced_train_text.head)
+
+
+    #model training
+    y = balanced_train_text["rating"].values
+    X = balanced_train_text["text"].values
+    #use balanced dataset to train
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    best_clf.fit(X_train,y_train)
+
+    #predict on the original, transformed texts
+    y_pred=best_clf.predict(train_text)
+    y_pred_test=best_clf.predict(test_texts)
    
+    df=pd.DataFrame({"review_id":busi_ids,"sentiment":y_pred})
+    df_test=pd.DataFrame({"review_id":busi_ids_test,"sentiment":y_pred_test})
+    df.to_csv(DIRECTORY + "sentiment_from_training.csv")
+    df_test.to_csv(DIRECTORY + "sentiment_from_testing.csv")
 
 
 
@@ -396,13 +451,13 @@ def main():
     # # reviewdf = reviewdf.iloc[:500]
   
     # reviewdf.to_csv(DIRECTORY+"review_train.csv")
-    reviewdf = pd.read_csv(DIRECTORY+"review_train.csv", encoding = "latin-1")
-    print(list(reviewdf))
-    # reviewdf = reviewdf.iloc[:500]
-    print('done with parse')
-    #for SVM:
-    SVM_scores=np.zeros((2,3,2))
-    multinomial_scores=np.zeros((2,3,2))
+    # reviewdf = pd.read_csv(DIRECTORY+"review_train.csv", encoding = "latin-1")
+    # print(list(reviewdf))
+    # # reviewdf = reviewdf.iloc[:500]
+    # print('done with parse')
+    # #for SVM:
+    # SVM_scores=np.zeros((2,3,2))
+    # multinomial_scores=np.zeros((2,3,2))
 
 
 
@@ -410,7 +465,7 @@ def main():
   
 
     # for i,tfidf in enumerate([True]):
-    for j,n in enumerate([1,2,3]):
+    # for j,n in enumerate([1,2,3]):
 
         # if tfidf==False:
         #     reviewtext=preprocess(reviewdf,n_gram=n, Tfidf=False)
@@ -423,34 +478,34 @@ def main():
         
         # if tfidf==True:
         # reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
-        reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
+        # reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
         
-        negative_data=reviewtext[reviewtext["rating"]==0]
-        pos_data=reviewtext[reviewtext["rating"]==1]
-        pos_data = pos_data.sample(negative_data.shape[0], replace=True)
+        # negative_data=reviewtext[reviewtext["rating"]==0]
+        # pos_data=reviewtext[reviewtext["rating"]==1]
+        # pos_data = pos_data.sample(negative_data.shape[0], replace=True)
 
-        reviewtext = pd.concat([pos_data, negative_data], axis=0)
+        # reviewtext = pd.concat([pos_data, negative_data], axis=0)
 
-        tf=TfidfVectorizer()
-        X= tf.fit_transform(reviewtext["text"])
-        y=reviewtext["rating"].values
+        # tf=TfidfVectorizer(stop_words="english",ngram_range=(n,n))
+        # X= tf.fit_transform(reviewtext["text"])
+        # y=reviewtext["rating"].values
 
 
-        print(reviewtext["rating"].value_counts())
+        # print(reviewtext["rating"].value_counts())
         
   
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
 
-        output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
+        # output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
         # SVM_scores[i,j,:]=output
 
         # output=cross_validation_MultinomialNB(X_train, X_test, y_train, y_test ,fold=5)
         # scores = [output[0][0], output[1][0]]
         # multinomial_scores[i,j,:]= scores
 
-        print(j)
+        # print(j)
 
     # # print(SVM_scores)
     # print(multinomial_scores)
@@ -458,39 +513,7 @@ def main():
 
 
 
-    #WRITE PREDICTIONS
-    # best_clf=MultinomialNB(alpha=0.01)
-    # reviewtext=preprocess(reviewdf,n_gram=1,Tfidf=True)
-    # train_text=reviewtext["text"]
-    
 
-
-    
-    # busi_ids_test=testtext["review_id"].values
-
-    # combined_review=pd.concat([train_text,test_texts],axis=0)
-
-
-    # tf=TfidfVectorizer()
-    # combined_X= tf.fit_transform(combined_review)
-
-    # #unpack
-    # train_text=combined_X[:reviewtext.shape[0]]
-    # test_texts=combined_X[reviewtext.shape[0]:]
-
-    # y = reviewtext["rating"].values
-    # X_train, X_test, y_train, y_test = train_test_split(train_text, y, test_size=0.33, random_state=42)
-    # best_clf.fit(X_train,y_train)
-    # y_pred=best_clf.predict(train_text)
-
-
-    # best_clf_test=MultinomialNB(alpha=0.01)
-    # y_pred_test=best_clf.predict(test_texts)
-    # busi_ids=reviewdf["review_id"].values
-    # df=pd.DataFrame({"review_id":busi_ids,"sentiment":y_pred})
-    # df_test=pd.DataFrame({"review_id":busi_ids_test,"sentiment":y_pred_test})
-    # df.to_csv(DIRECTORY + "sentiment_from_training.csv")
-    # df_test.to_csv(DIRECTORY + "sentiment_from_testing.csv")
 
     
 
@@ -499,203 +522,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# results 
-# startig for loop
-# done with for loop
-# 1.0    283316
-# 0.0      3016
-# Name: rating, dtype: int64
-# # Tuning hyper-parameters for accuracy
-
-# Best parameters set found on development set:
-
-# {'alpha': 0.01}
-# Best score:
-
-# 0.9893923124237654
-# Grid scores on development set:
-
-# 0.988 (+/-0.000) for {'alpha': 1}
-# 0.988 (+/-0.001) for {'alpha': 0.1}
-# 0.989 (+/-0.001) for {'alpha': 0.01}
-
-# Detailed classification report:
-
-# The model is trained on the full development set.
-# The scores are computed on the full evaluation set.
-
-#               precision    recall  f1-score   support
-
-#          0.0       0.50      0.31      0.38       967
-#          1.0       0.99      1.00      0.99     93523
-
-#    micro avg       0.99      0.99      0.99     94490
-#    macro avg       0.75      0.65      0.69     94490
-# weighted avg       0.99      0.99      0.99     94490
-
-
-# # Tuning hyper-parameters for f1
-
-# Best parameters set found on development set:
-
-# {'alpha': 0.01}
-# Best score:
-
-# 0.9946515259939932
-# Grid scores on development set:
-
-# 0.994 (+/-0.000) for {'alpha': 1}
-# 0.994 (+/-0.000) for {'alpha': 0.1}
-# 0.995 (+/-0.000) for {'alpha': 0.01}
-
-# Detailed classification report:
-
-# The model is trained on the full development set.
-# The scores are computed on the full evaluation set.
-
-#               precision    recall  f1-score   support
-
-#          0.0       0.50      0.31      0.38       967
-#          1.0       0.99      1.00      0.99     93523
-
-#    micro avg       0.99      0.99      0.99     94490
-#    macro avg       0.75      0.65      0.69     94490
-# weighted avg       0.99      0.99      0.99     94490
-
-
-# 0 0
-# startig for loop
-# done with for loop
-# 1.0    283316
-# 0.0      3016
-# Name: rating, dtype: int64
-# # Tuning hyper-parameters for accuracy
-
-# Best parameters set found on development set:
-
-# {'alpha': 0.01}
-# Best score:
-
-# 0.9893923124237654
-# Grid scores on development set:
-
-# 0.988 (+/-0.000) for {'alpha': 1}
-# 0.988 (+/-0.001) for {'alpha': 0.1}
-# 0.989 (+/-0.001) for {'alpha': 0.01}
-
-# Detailed classification report:
-
-# The model is trained on the full development set.
-# The scores are computed on the full evaluation set.
-
-#               precision    recall  f1-score   support
-
-#          0.0       0.50      0.31      0.38       967
-#          1.0       0.99      1.00      0.99     93523
-
-#    micro avg       0.99      0.99      0.99     94490
-#    macro avg       0.75      0.65      0.69     94490
-# weighted avg       0.99      0.99      0.99     94490
-
-
-# # Tuning hyper-parameters for f1
-
-# Best parameters set found on development set:
-
-# {'alpha': 0.01}
-# Best score:
-
-# 0.9946515259939932
-# Grid scores on development set:
-
-# 0.994 (+/-0.000) for {'alpha': 1}
-# 0.994 (+/-0.000) for {'alpha': 0.1}
-# 0.995 (+/-0.000) for {'alpha': 0.01}
-
-# Detailed classification report:
-
-# The model is trained on the full development set.
-# The scores are computed on the full evaluation set.
-
-#               precision    recall  f1-score   support
-
-#          0.0       0.50      0.31      0.38       967
-#          1.0       0.99      1.00      0.99     93523
-
-#    micro avg       0.99      0.99      0.99     94490
-#    macro avg       0.75      0.65      0.69     94490
-# weighted avg       0.99      0.99      0.99     94490
-
-
-# 0 1
-# startig for loop
-# done with for loop
-# 1.0    283316
-# 0.0      3016
-# Name: rating, dtype: int64
-# # Tuning hyper-parameters for accuracy
-
-# Best parameters set found on development set:
-
-# {'alpha': 0.01}
-# Best score:
-
-# 0.9893923124237654
-# Grid scores on development set:
-
-# 0.988 (+/-0.000) for {'alpha': 1}
-# 0.988 (+/-0.001) for {'alpha': 0.1}
-# 0.989 (+/-0.001) for {'alpha': 0.01}
-
-# Detailed classification report:
-
-# The model is trained on the full development set.
-# The scores are computed on the full evaluation set.
-
-#               precision    recall  f1-score   support
-
-#          0.0       0.50      0.31      0.38       967
-#          1.0       0.99      1.00      0.99     93523
-
-#    micro avg       0.99      0.99      0.99     94490
-#    macro avg       0.75      0.65      0.69     94490
-# weighted avg       0.99      0.99      0.99     94490
-
-
-# # Tuning hyper-parameters for f1
-
-# Best parameters set found on development set:
-
-# {'alpha': 0.01}
-# Best score:
-
-# 0.9946515259939932
-# Grid scores on development set:
-
-# 0.994 (+/-0.000) for {'alpha': 1}
-# 0.994 (+/-0.000) for {'alpha': 0.1}
-# 0.995 (+/-0.000) for {'alpha': 0.01}
-
-# Detailed classification report:
-
-# The model is trained on the full development set.
-# The scores are computed on the full evaluation set.
-
-#               precision    recall  f1-score   support
-
-#          0.0       0.50      0.31      0.38       967
-#          1.0       0.99      1.00      0.99     93523
-
-#    micro avg       0.99      0.99      0.99     94490
-#    macro avg       0.75      0.65      0.69     94490
-# weighted avg       0.99      0.99      0.99     94490
-
-
-# 0 2
-# startig for loop
-# done with for loop
-# 1.0    283316
-# 0.0      3016
-# Name: rating, dtype: int64
