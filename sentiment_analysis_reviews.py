@@ -124,8 +124,9 @@ def parseReviewDF(df):
     # review = pd.read_csv(reviewfile, parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
  
     review_text=df[['review_id','text_past','running_average_past']]
+    # print(list(review_text))
     review_text.rename(columns={'running_average_past':'rating','text_past':"text"}, inplace=True)
-   
+    # print(list(review_text))
     return review_text
 
 def preprocess(review_text_,n_gram=1,binary_rating=True,Tfidf=False):
@@ -376,13 +377,14 @@ def cross_validation_MultinomialNB(X_train,X_test,y_train,y_test,fold=5):
 
 
 def main():
-    reviewfile=DIRECTORY + "training.csv"
-    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
-    reviewdf = reviewdf.dropna()
-    # reviewdf = reviewdf.iloc[:500]
-    reviewdf=parseReviewDF(reviewdf)
-    reviewdf.to_csv(DIRECTORY+"review_train.csv")
-    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    # reviewfile=DIRECTORY + "training.csv"
+    # reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    # reviewdf = reviewdf.dropna()
+    # # reviewdf = reviewdf.iloc[:500]
+    # reviewdf=parseReviewDF(reviewdf)
+    # reviewdf.to_csv(DIRECTORY+"review_train.csv")
+    reviewdf = pd.read_csv(DIRECTORY+"review_train.csv", encoding = "latin-1")
+    print(list(reviewdf))
     # reviewdf = reviewdf.iloc[:500]
     print('done with parse')
     #for SVM:
