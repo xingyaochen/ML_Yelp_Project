@@ -287,9 +287,7 @@ def cross_validation_SVM(X_train,X_test,y_train,y_test,fold=5) :
     
     #---------------------------------------------------------------
     #grid search SVM
-    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
-                     'C': [1, 10, 100, 1000]},
-                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]},]
+    tuned_parameters = [{'kernel': ['linear'], 'C': [1, 10, 100, 1000]},]
     scores = ['accuracy', 'f1']
     output=[]
     for score in scores:
@@ -377,30 +375,28 @@ def cross_validation_MultinomialNB(X_train,X_test,y_train,y_test,fold=5):
 
 
 def main():
-    reviewfile=DIRECTORY + "training.csv"
-    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
-    reviewdf = reviewdf.dropna()
+    # reviewfile=DIRECTORY + "training.csv"
+    # reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    # reviewdf = reviewdf.dropna()
 
 
 
-    testfile=DIRECTORY + "testing.csv"
-    testdf = pd.read_csv(testfile, encoding = "latin-1")
-    testdf = testdf.dropna()
-    testdf=parseReviewDF(testdf)
-    testtext=preprocess(testdf,n_gram=1, Tfidf=True)
-    test_texts=testtext["text"]
+    # testfile=DIRECTORY + "testing.csv"
+    # testdf = pd.read_csv(testfile, encoding = "latin-1")
+    # testdf = testdf.dropna()
+    # testdf=parseReviewDF(testdf)
+    # testtext=preprocess(testdf,n_gram=1, Tfidf=True)
+    # test_texts=testtext["text"]
+    # reviewdf=parseReviewDF(reviewdf)
    
-    tf=TfidfVectorizer()
-    test_X= tf.fit_transform(test_texts)
-    busi_ids_test=testtext["review_id"].values
 
 
 
 
     # # reviewdf = reviewdf.iloc[:500]
-    reviewdf=parseReviewDF(reviewdf)
+  
     # reviewdf.to_csv(DIRECTORY+"review_train.csv")
-    # reviewdf = pd.read_csv(DIRECTORY+"review_train.csv", encoding = "latin-1")
+    reviewdf = pd.read_csv(DIRECTORY+"review_train.csv", encoding = "latin-1")
     print(list(reviewdf))
     # reviewdf = reviewdf.iloc[:500]
     print('done with parse')
@@ -409,58 +405,81 @@ def main():
     multinomial_scores=np.zeros((2,3,2))
 
     # for i,tfidf in enumerate([True]):
-    #     for j,n in enumerate([1,2,3]):
-    
-    #         if tfidf==False:
-    #             reviewtext=preprocess(reviewdf,n_gram=n, Tfidf=False)
-    #             texts=reviewtext["text"]
-            
-    #             #USING BAD OF WORDS
-    #             dictionary = extract_dictionary(texts)
-            
-    #             X=extract_feature_vectors(texts,dictionary)
-            
-    #         if tfidf==True:
-    #             reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
-    #             tf=TfidfVectorizer()
-    #             X= tf.fit_transform(reviewtext["text"])
-            
-    #         y=reviewtext["rating"].values
-            
-    #         print(reviewtext["rating"].value_counts())
+    for j,n in enumerate([1,2,3]):
 
-    #         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+        # if tfidf==False:
+        #     reviewtext=preprocess(reviewdf,n_gram=n, Tfidf=False)
+        #     texts=reviewtext["text"]
+        
+        #     #USING BAD OF WORDS
+        #     dictionary = extract_dictionary(texts)
+        
+        #     X=extract_feature_vectors(texts,dictionary)
+        
+        # if tfidf==True:
+        reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
+        tf=TfidfVectorizer()
+        X= tf.fit_transform(reviewtext["text"])
+        
+        y=reviewtext["rating"].values
+        
+        print(reviewtext["rating"].value_counts())
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
 
-    #         # output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
-    #         # SVM_scores[i,j,:]=output
+        output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
+        # SVM_scores[i,j,:]=output
 
-    #         output=cross_validation_MultinomialNB(X_train, X_test, y_train, y_test ,fold=5)
-    #         scores = [output[0][0], output[1][0]]
-    #         multinomial_scores[i,j,:]= scores
+        # output=cross_validation_MultinomialNB(X_train, X_test, y_train, y_test ,fold=5)
+        # scores = [output[0][0], output[1][0]]
+        # multinomial_scores[i,j,:]= scores
 
-    #         print(i, j)
+        print(j)
 
     # # print(SVM_scores)
     # print(multinomial_scores)
-    best_clf=MultinomialNB(alpha=0.01)
-    reviewtext=preprocess(reviewdf,n_gram=1,Tfidf=True)
-    tf=TfidfVectorizer()
-    X= tf.fit_transform(reviewtext["text"])
-    y = reviewtext["rating"].values
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-    best_clf.fit(X_train,y_train)
-    y_pred=best_clf.predict(X)
-    y_pred_test=best_clf.predict(test_X)
-    busi_ids=reviewdf["review_id"].values
-    df=pd.DataFrame({"review_id":busi_ids,"sentiment":y_pred})
-    df_test=pd.DataFrame({"review_id":busi_ids_test,"sentiment":y_pred_test})
-    df.to_csv(DIRECTORY + "sentiment_from_training.csv")
-    df_test.to_csv(DIRECTORY + "sentiment_from_testing.csv")
+
+
+
+
+    #WRITE PREDICTIONS
+    # best_clf=MultinomialNB(alpha=0.01)
+    # reviewtext=preprocess(reviewdf,n_gram=1,Tfidf=True)
+    # train_text=reviewtext["text"]
+    
+
+
+    
+    # busi_ids_test=testtext["review_id"].values
+
+    # combined_review=pd.concat([train_text,test_texts],axis=0)
+
+
+    # tf=TfidfVectorizer()
+    # combined_X= tf.fit_transform(combined_review)
+
+    # #unpack
+    # train_text=combined_X[:reviewtext.shape[0]]
+    # test_texts=combined_X[reviewtext.shape[0]:]
+
+    # y = reviewtext["rating"].values
+    # X_train, X_test, y_train, y_test = train_test_split(train_text, y, test_size=0.33, random_state=42)
+    # best_clf.fit(X_train,y_train)
+    # y_pred=best_clf.predict(train_text)
+
+
+    # best_clf_test=MultinomialNB(alpha=0.01)
+    # y_pred_test=best_clf.predict(test_texts)
+    # busi_ids=reviewdf["review_id"].values
+    # df=pd.DataFrame({"review_id":busi_ids,"sentiment":y_pred})
+    # df_test=pd.DataFrame({"review_id":busi_ids_test,"sentiment":y_pred_test})
+    # df.to_csv(DIRECTORY + "sentiment_from_training.csv")
+    # df_test.to_csv(DIRECTORY + "sentiment_from_testing.csv")
 
     
 
-    return df,df_test
+    # return df,df_test
 
 
 if __name__ == "__main__":
