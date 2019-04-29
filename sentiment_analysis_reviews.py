@@ -326,7 +326,6 @@ def cross_validation_SVM(X_train,X_test,y_train,y_test,fold=5) :
         y_true, y_pred = y_test, clf.predict(X_test)
         print(classification_report(y_true, y_pred))
         print()
-    
     return output
     
 
@@ -429,14 +428,6 @@ def main():
 
     return 
 
-
-    
-    
-
-
-   
-  
-    
 
 if __name__ == "__main__":
     main()
