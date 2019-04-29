@@ -123,7 +123,7 @@ def parseReviewDF(df):
     # #read in the review csv
     # review = pd.read_csv(reviewfile, parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
  
-    review_text=df[['business_id','review_id','text_past','running_average_past']]
+    review_text=df[['review_id','text_past','running_average_past']]
     review_text.rename(columns={'running_average_past':'rating','text_past':"text"}, inplace=True)
    
     return review_text
@@ -295,7 +295,7 @@ def cross_validation_SVM(X_train,X_test,y_train,y_test,fold=5) :
         print()
 
         clf = GridSearchCV(SVC(), tuned_parameters, cv=fold,
-                        scoring='%s_macro' % score)
+                        scoring=score)
         clf.fit(X_train, y_train)
 
         print("Best parameters set found on development set:")
@@ -338,7 +338,7 @@ def cross_validation_MultinomialNB(X_train,X_test,y_train,y_test,fold=5):
         print()
 
         clf = GridSearchCV(MultinomialNB(), tuned_parameters, cv=fold,
-                        scoring='%s_macro' % score)
+                        scoring=score)
         clf.fit(X_train, y_train)
 
         print("Best parameters set found on development set:")
@@ -371,65 +371,55 @@ def cross_validation_MultinomialNB(X_train,X_test,y_train,y_test,fold=5):
     return output
 
 
-def lineplot(x, y, label):
-    """
-    Make a line plot.
-
-    Parameters
-    --------------------
-        x            -- list of doubles, x values
-        y            -- list of doubles, y values
-        label        -- string, label for legend
-    """
-    xx = range(len(x))
-    plt.plot(xx, y, linestyle='-', linewidth=2, label=label)
-    plt.xticks(xx, x)
 
 
 
 def main():
     reviewfile=DIRECTORY + "training.csv"
     reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    reviewdf = reviewdf.dropna()
     reviewdf=parseReviewDF(reviewdf)
-    #for SVM:
-    SVM_scores=np.zeros((2,3,2))
-    multinomial_scores=np.zeros((2,3,2))
+    reviewdf.to_csv(DIRECTORY+"review_train.csv")
+    print('done with parse')
+    # #for SVM:
+    # SVM_scores=np.zeros((2,3,2))
+    # multinomial_scores=np.zeros((2,3,2))
 
-    for i,tfidf in enumerate([True, False]):
-        for j,n in enumerate([1,2,3]):
+    # for i,tfidf in enumerate([True, False]):
+    #     for j,n in enumerate([1,2,3]):
     
-            if tfidf==False:
-                reviewdf=preprocess(reviewdf,n_gram=n, Tfidf=False)
-                texts=reviewdf["text"]
+    #         if tfidf==False:
+    #             reviewtext=preprocess(reviewdf,n_gram=n, Tfidf=False)
+    #             texts=reviewtext["text"]
             
-                #USING BAD OF WORDS
-                dictionary = extract_dictionary(texts)
+    #             #USING BAD OF WORDS
+    #             dictionary = extract_dictionary(texts)
             
-                X=extract_feature_vectors(texts,dictionary)
+    #             X=extract_feature_vectors(texts,dictionary)
             
-            if tfidf==True:
-                reviewdf=preprocess(reviewdf,n_gram=n,Tfidf=True)
-                tf=TfidfVectorizer()
-                X= tf.fit_transform(reviewdf["text"])
+    #         if tfidf==True:
+    #             reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
+    #             tf=TfidfVectorizer()
+    #             X= tf.fit_transform(reviewtext["text"])
             
-            y=reviewdf["rating"].values
+    #         y=reviewtext["rating"].values
             
-            print(reviewdf["rating"].value_counts())
+    #         print(reviewtext["rating"].value_counts())
 
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-
-
-            output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
-            SVM_scores[i,j,:]=output
-
-            output=cross_validation_MultinomialNB( X_train, X_test, y_train, y_test ,fold=5)
-            multinomial_scores[i,j,:]=output
+    #         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
 
-    print(SVM_scores)
-    print(multinomial_scores)
+    #         output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
+    #         SVM_scores[i,j,:]=output
 
-    return 
+    #         output=cross_validation_MultinomialNB( X_train, X_test, y_train, y_test ,fold=5)
+    #         multinomial_scores[i,j,:]=output
+
+
+    # print(SVM_scores)
+    # print(multinomial_scores)
+
+    # return 
 
 
     
