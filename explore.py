@@ -147,7 +147,7 @@ def construct_meta_features(biz_df):
 
     features_df_full = pd.concat([features_df, amb_df, goodMeal_df, bizPark_df, hr_df, categories_df], axis = 1)
 
-    features_df_clean = features_df_full.dropna(axis = 1, thresh = int(0.5*features_df_full.shape[0]))
+    features_df_clean = features_df_full.dropna(axis = 1, thresh = int(0.8*features_df_full.shape[0]))
     return features_df_clean
 
 def factorize_features(features_df_clean):
@@ -191,13 +191,13 @@ def ohe_features(features_df_clean):
             feat = feat.str.replace("'", "")
             feat = [None if f == 'None' else f for f in feat]
             feat_ohe = pd.get_dummies(feat)
-            feat_ohe.columns  = [ft+"_" + o for o in list(feat_ohe)]
+            feat_ohe.columns  = [ft+"_" + str(o) for o in list(feat_ohe)]
             ohe_list.append(feat_ohe)
         except:
             # print(ft)
             feat_ohe = pd.get_dummies(feat)
             # print(list(feat_ohe))
-            feat_ohe.columns  = [ft+"_" + o for o in list(feat_ohe)]
+            feat_ohe.columns  = [ft+"_" + str(o) for o in list(feat_ohe)]
             ohe_list.append(feat_ohe)
             
     features_ohe =  pd.concat(ohe_list, axis = 1)
@@ -389,8 +389,8 @@ def main():
     all_train, all_test = save_train_test_new(biz_file, review_file, num_reviews_before = 100)
     print(all_train.shape)
 if __name__ == "__main__":
-    main()
-    # pass
+    # main()
+    pass
 
 # biz_file = 'filtered_business.csv'
 # review_file = 'review.csv'
