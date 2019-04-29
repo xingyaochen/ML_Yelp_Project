@@ -404,6 +404,22 @@ def main():
     SVM_scores=np.zeros((2,3,2))
     multinomial_scores=np.zeros((2,3,2))
 
+
+
+
+    reviewtext=preprocess(reviewdf,n_gram=1,Tfidf=True)
+    tf=TfidfVectorizer()
+    X= tf.fit_transform(reviewtext["text"])
+    y=reviewtext["rating"].values
+    negative_data=reviewtext[reviewtext["rating"]==0]
+    pos_data=reviewtext[reviewtext["rating"]==1]
+    pos_data = pos_data.sample(negative_data.shape[0], replace=True)
+
+    reviewtext = pd.concat([pos_data, negative_data], axis=0)
+
+
+    print(reviewtext["rating"].value_counts())
+
     # for i,tfidf in enumerate([True]):
     for j,n in enumerate([1,2,3]):
 
@@ -417,7 +433,7 @@ def main():
         #     X=extract_feature_vectors(texts,dictionary)
         
         # if tfidf==True:
-        reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
+        # reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
         tf=TfidfVectorizer()
         X= tf.fit_transform(reviewtext["text"])
         
