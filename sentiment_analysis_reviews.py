@@ -136,16 +136,16 @@ def preprocess(review_text_,n_gram=1,binary_rating=True,Tfidf=False):
     #calculate the average rating as a dividing line between bad and good rating
     #which we can use as a proxy for positive/negative label
     review_text=review_text_.copy(deep=True)
-    averageRating=review_text["rating"].mean()
+    # averageRating=review_text["rating"].mean()
 
     #helper function for converting
     def changeToBinaryRating(rating):
-        if rating>=averageRating:
+        if rating > 2.5:
             return 1
         else: return 0
     print('startig for loop')
     for index_label, row_series in review_text.iterrows():
-        print(index_label)
+        # print(index_label)
    # For each row update the 'Bonus' value to it's double
         if Tfidf==False:
             #only change text to BOG if Tfidf is false
@@ -226,14 +226,14 @@ def extract_feature_vectors(tokenizeWords, word_list) :
  
     num_lines = tokenizeWords.count()
     num_words = len(word_list)
-    feature_matrix = np.zeros(num_words)
+    feature_matrix = np.zeros((num_lines,num_words))
  
     for i, words in enumerate(tokenizeWords.tolist()):
         for word in words:
             #find the index in the dictionary
             index=word_list[word]
             #set the value in the matrix equal to 1
-            feature_matrix[i][index]=1
+            feature_matrix[i][int(index)]=1
 
 
     
@@ -331,7 +331,7 @@ def cross_validation_SVM(X_train,X_test,y_train,y_test,fold=5) :
 
     
 def cross_validation_MultinomialNB(X_train,X_test,y_train,y_test,fold=5):
-    tuned_parameters={'clf__alpha': [1, 1e-1, 1e-2]}
+    tuned_parameters={'alpha': [1, 1e-1, 1e-2]}
     scores = ['accuracy', 'f1']
     output=[]
     for score in scores:
@@ -379,48 +379,53 @@ def main():
     reviewfile=DIRECTORY + "training.csv"
     reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
     reviewdf = reviewdf.dropna()
+    # reviewdf = reviewdf.iloc[:500]
     reviewdf=parseReviewDF(reviewdf)
     reviewdf.to_csv(DIRECTORY+"review_train.csv")
+    reviewdf = pd.read_csv(reviewfile, encoding = "latin-1")
+    # reviewdf = reviewdf.iloc[:500]
     print('done with parse')
-    # #for SVM:
-    # SVM_scores=np.zeros((2,3,2))
-    # multinomial_scores=np.zeros((2,3,2))
+    #for SVM:
+    SVM_scores=np.zeros((2,3,2))
+    multinomial_scores=np.zeros((2,3,2))
 
-    # for i,tfidf in enumerate([True, False]):
-    #     for j,n in enumerate([1,2,3]):
+    for i,tfidf in enumerate([True, False]):
+        for j,n in enumerate([1,2,3]):
     
-    #         if tfidf==False:
-    #             reviewtext=preprocess(reviewdf,n_gram=n, Tfidf=False)
-    #             texts=reviewtext["text"]
+            if tfidf==False:
+                reviewtext=preprocess(reviewdf,n_gram=n, Tfidf=False)
+                texts=reviewtext["text"]
             
-    #             #USING BAD OF WORDS
-    #             dictionary = extract_dictionary(texts)
+                #USING BAD OF WORDS
+                dictionary = extract_dictionary(texts)
             
-    #             X=extract_feature_vectors(texts,dictionary)
+                X=extract_feature_vectors(texts,dictionary)
             
-    #         if tfidf==True:
-    #             reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
-    #             tf=TfidfVectorizer()
-    #             X= tf.fit_transform(reviewtext["text"])
+            if tfidf==True:
+                reviewtext=preprocess(reviewdf,n_gram=n,Tfidf=True)
+                tf=TfidfVectorizer()
+                X= tf.fit_transform(reviewtext["text"])
             
-    #         y=reviewtext["rating"].values
+            y=reviewtext["rating"].values
             
-    #         print(reviewtext["rating"].value_counts())
+            print(reviewtext["rating"].value_counts())
 
-    #         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
 
-    #         output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
-    #         SVM_scores[i,j,:]=output
+            # output=cross_validation_SVM( X_train, X_test, y_train, y_test ,fold=5) 
+            # SVM_scores[i,j,:]=output
 
-    #         output=cross_validation_MultinomialNB( X_train, X_test, y_train, y_test ,fold=5)
-    #         multinomial_scores[i,j,:]=output
+            output=cross_validation_MultinomialNB(X_train, X_test, y_train, y_test ,fold=5)
+            scores = [output[0][0], output[1][0]]
+            multinomial_scores[i,j,:]= scores
 
+            print(i, j)
 
     # print(SVM_scores)
-    # print(multinomial_scores)
+    print(multinomial_scores)
 
-    # return 
+    return 
 
 
     

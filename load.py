@@ -53,7 +53,7 @@ def read_and_write_csv(json_file_path, csv_file_path, filterD = {}):
 
 # # filterD = {'city': {"Las Vegas"}}
 def main():
-    filterD = {'state': {'NV'}, 'review_count': 600, 'categories': {'Food', 'Restaurants','Bars', 'Breakfast', 'Lunch', 'Dinner', 'Eatertainment'}}
+    filterD = {'state': {'NV'}, 'review_count': 1000, 'categories': {'Food', 'Restaurants','Bars', 'Breakfast', 'Lunch', 'Dinner', 'Eatertainment'}}
 
     json_file_path = DIRECTORY + 'business.json'
     csv_file_path = DIRECTORY + 'business.csv'
@@ -62,7 +62,7 @@ def main():
     city, counts = np.unique(business['city'], return_counts=True)
 
     # change this value to change the threshold value of number of businesses in the area
-    threshold = 50
+    threshold = 100
 
     # filter by city and number of businesses in that city
     cities_alot = city[counts > threshold]
@@ -79,7 +79,9 @@ def main():
     csv_review_path = DIRECTORY + 'review.csv'
     read_and_write_csv(json_review_path, csv_review_path, filterD_reviews)
     dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+    
     review = pd.read_csv(DIRECTORY + "review.csv",  parse_dates = ['date'], date_parser = dateparse, encoding = "latin-1")
+    print(review.shape)
     # review_sorted = review.sort_values(by = ['business_id', 'date'])
     # review_sorted.to_csv(DIRECTORY + "sorted_reviews.csv")
 
