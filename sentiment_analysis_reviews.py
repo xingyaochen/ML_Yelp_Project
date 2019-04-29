@@ -440,3 +440,203 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# results 
+# startig for loop
+# done with for loop
+# 1.0    283316
+# 0.0      3016
+# Name: rating, dtype: int64
+# # Tuning hyper-parameters for accuracy
+
+# Best parameters set found on development set:
+
+# {'alpha': 0.01}
+# Best score:
+
+# 0.9893923124237654
+# Grid scores on development set:
+
+# 0.988 (+/-0.000) for {'alpha': 1}
+# 0.988 (+/-0.001) for {'alpha': 0.1}
+# 0.989 (+/-0.001) for {'alpha': 0.01}
+
+# Detailed classification report:
+
+# The model is trained on the full development set.
+# The scores are computed on the full evaluation set.
+
+#               precision    recall  f1-score   support
+
+#          0.0       0.50      0.31      0.38       967
+#          1.0       0.99      1.00      0.99     93523
+
+#    micro avg       0.99      0.99      0.99     94490
+#    macro avg       0.75      0.65      0.69     94490
+# weighted avg       0.99      0.99      0.99     94490
+
+
+# # Tuning hyper-parameters for f1
+
+# Best parameters set found on development set:
+
+# {'alpha': 0.01}
+# Best score:
+
+# 0.9946515259939932
+# Grid scores on development set:
+
+# 0.994 (+/-0.000) for {'alpha': 1}
+# 0.994 (+/-0.000) for {'alpha': 0.1}
+# 0.995 (+/-0.000) for {'alpha': 0.01}
+
+# Detailed classification report:
+
+# The model is trained on the full development set.
+# The scores are computed on the full evaluation set.
+
+#               precision    recall  f1-score   support
+
+#          0.0       0.50      0.31      0.38       967
+#          1.0       0.99      1.00      0.99     93523
+
+#    micro avg       0.99      0.99      0.99     94490
+#    macro avg       0.75      0.65      0.69     94490
+# weighted avg       0.99      0.99      0.99     94490
+
+
+# 0 0
+# startig for loop
+# done with for loop
+# 1.0    283316
+# 0.0      3016
+# Name: rating, dtype: int64
+# # Tuning hyper-parameters for accuracy
+
+# Best parameters set found on development set:
+
+# {'alpha': 0.01}
+# Best score:
+
+# 0.9893923124237654
+# Grid scores on development set:
+
+# 0.988 (+/-0.000) for {'alpha': 1}
+# 0.988 (+/-0.001) for {'alpha': 0.1}
+# 0.989 (+/-0.001) for {'alpha': 0.01}
+
+# Detailed classification report:
+
+# The model is trained on the full development set.
+# The scores are computed on the full evaluation set.
+
+#               precision    recall  f1-score   support
+
+#          0.0       0.50      0.31      0.38       967
+#          1.0       0.99      1.00      0.99     93523
+
+#    micro avg       0.99      0.99      0.99     94490
+#    macro avg       0.75      0.65      0.69     94490
+# weighted avg       0.99      0.99      0.99     94490
+
+
+# # Tuning hyper-parameters for f1
+
+# Best parameters set found on development set:
+
+# {'alpha': 0.01}
+# Best score:
+
+# 0.9946515259939932
+# Grid scores on development set:
+
+# 0.994 (+/-0.000) for {'alpha': 1}
+# 0.994 (+/-0.000) for {'alpha': 0.1}
+# 0.995 (+/-0.000) for {'alpha': 0.01}
+
+# Detailed classification report:
+
+# The model is trained on the full development set.
+# The scores are computed on the full evaluation set.
+
+#               precision    recall  f1-score   support
+
+#          0.0       0.50      0.31      0.38       967
+#          1.0       0.99      1.00      0.99     93523
+
+#    micro avg       0.99      0.99      0.99     94490
+#    macro avg       0.75      0.65      0.69     94490
+# weighted avg       0.99      0.99      0.99     94490
+
+
+# 0 1
+# startig for loop
+# done with for loop
+# 1.0    283316
+# 0.0      3016
+# Name: rating, dtype: int64
+# # Tuning hyper-parameters for accuracy
+
+# Best parameters set found on development set:
+
+# {'alpha': 0.01}
+# Best score:
+
+# 0.9893923124237654
+# Grid scores on development set:
+
+# 0.988 (+/-0.000) for {'alpha': 1}
+# 0.988 (+/-0.001) for {'alpha': 0.1}
+# 0.989 (+/-0.001) for {'alpha': 0.01}
+
+# Detailed classification report:
+
+# The model is trained on the full development set.
+# The scores are computed on the full evaluation set.
+
+#               precision    recall  f1-score   support
+
+#          0.0       0.50      0.31      0.38       967
+#          1.0       0.99      1.00      0.99     93523
+
+#    micro avg       0.99      0.99      0.99     94490
+#    macro avg       0.75      0.65      0.69     94490
+# weighted avg       0.99      0.99      0.99     94490
+
+
+# # Tuning hyper-parameters for f1
+
+# Best parameters set found on development set:
+
+# {'alpha': 0.01}
+# Best score:
+
+# 0.9946515259939932
+# Grid scores on development set:
+
+# 0.994 (+/-0.000) for {'alpha': 1}
+# 0.994 (+/-0.000) for {'alpha': 0.1}
+# 0.995 (+/-0.000) for {'alpha': 0.01}
+
+# Detailed classification report:
+
+# The model is trained on the full development set.
+# The scores are computed on the full evaluation set.
+
+#               precision    recall  f1-score   support
+
+#          0.0       0.50      0.31      0.38       967
+#          1.0       0.99      1.00      0.99     93523
+
+#    micro avg       0.99      0.99      0.99     94490
+#    macro avg       0.75      0.65      0.69     94490
+# weighted avg       0.99      0.99      0.99     94490
+
+
+# 0 2
+# startig for loop
+# done with for loop
+# 1.0    283316
+# 0.0      3016
+# Name: rating, dtype: int64
