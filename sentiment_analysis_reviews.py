@@ -145,6 +145,7 @@ def preprocess(review_text_,n_gram=1,binary_rating=True,Tfidf=False):
         else: return 0
     print('startig for loop')
     for index_label, row_series in review_text.iterrows():
+        print(index_label)
    # For each row update the 'Bonus' value to it's double
         if Tfidf==False:
             #only change text to BOG if Tfidf is false

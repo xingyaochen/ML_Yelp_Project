@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import random
 from rating_time import *
 from explore import *
+from sklearn.model_selection import train_test_split
 
 #hold out percentage
 #train on %50 of training data and then validate on following 10%
@@ -78,10 +79,43 @@ def singleBizInterval(startVals,singleBiz):
     returndf = pd.concat(dataList)
     return returndf
 
+def inTimeValidation(currData, percValidate):
+    """Splits business data into training and validation sets"""
+    #get list of businesses and their indexes
+    all_biz, indx = np.unique(currData['business_id'], return_index=True)
+    indx = sorted(indx) + [currData.shape[0]]
+    indx_ranges = [(indx[i], indx[i+1]) for i in range(len(indx)-1)]
+
+    #split buisinesses and their indexes
+    ind_train, ind_validate = train_test_split(indx_ranges, test_size = percValidate)
+
+    #get the reviews for businesses in each set
+    finalTrain = []
+    finalValidate = []
+    for indx_r in ind_train:
+        currentdf = currData.iloc[indx_r[0]:indx_r[1]]
+        finalTrain.append(currentdf)
+    finalTrain = pd.concat(finalTrain)
+
+    for indx_r in ind_validate:
+        currentdf = currData.iloc[indx_r[0]:indx_r[1]]
+        finalValidate.append(currentdf)
+    #turn each set into a dataframe
+    finalValidate = pd.concat(finalValidate)
+    finalTrain.to_csv(DIRECTORY+"inTimeTrain.csv", encoding="latin-1", index=False)
+    finalValidate.to_csv(DIRECTORY+"inTimeValidate.csv", encoding="latin-1", index=False)
+    return finalTrain, finalValidate
+
+
 def main():
-    currdata = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
-    folds = 4
-    crossValidation(currdata, folds)
+    currData = pd.read_csv(DIRECTORY+"training.csv", encoding= "utf-8")
+    # folds = 4
+    # crossValidation(currdata, folds)
+    #70/30 split
+    percValidate = .3
+    inTimeValidation(currData, percValidate)
+
+
 
 if __name__ == "__main__":
     main()

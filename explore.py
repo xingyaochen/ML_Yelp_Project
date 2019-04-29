@@ -147,7 +147,7 @@ def construct_meta_features(biz_df):
 
     features_df_full = pd.concat([features_df, amb_df, goodMeal_df, bizPark_df, hr_df, categories_df], axis = 1)
 
-    features_df_clean = features_df_full.dropna(axis = 1, thresh = int(0.2*features_df_full.shape[0]))
+    features_df_clean = features_df_full.dropna(axis = 1, thresh = int(0.5*features_df_full.shape[0]))
     return features_df_clean
 
 def factorize_features(features_df_clean):
@@ -258,7 +258,6 @@ def add_past_revCount_features(biz_data, num_reviews_before = 30):
     return biz_data
 
 
-
 def save_train_test(biz_file, review_file, num_reviews_before = 100):
     biz = pd.read_csv(DIRECTORY+biz_file, encoding= "utf-8")
 
@@ -278,6 +277,8 @@ def save_train_test(biz_file, review_file, num_reviews_before = 100):
     keepcol.remove('average_over_span')
     all_data = all_data[keepcol]
     all_data.dropna( inplace= True)
+
+
     all_train_y = []
     all_test_y = []
     all_train_X = []
@@ -292,7 +293,7 @@ def save_train_test(biz_file, review_file, num_reviews_before = 100):
         # print("before:", biz_data.shape)
         biz_data = add_past_revCount_features(biz_data, num_reviews_before)
         # print("after:", biz_data.shape)
-        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id', 'text', 'business_id'] + ['review_id_past', 'text_past', 'running_average_past']]
+        biz_X = biz_data[list(linked_featues_ohe)[1:] + ['review_id', 'text', 'business_id'] + ['review_id_past', 'text_past', 'running_average_past', 'date']]
         biz_y = biz_data['running_average']
         biz_y_train, biz_y_test = biz_y[:int(len(biz_y)*0.8)], biz_y[int(len(biz_y)*0.8):]
         biz_X_train, biz_X_test = biz_X.iloc[:int(len(biz_y)*0.8)], biz_X.iloc[int(len(biz_y)*0.8):]
@@ -310,19 +311,88 @@ def save_train_test(biz_file, review_file, num_reviews_before = 100):
 
     all_test =  pd.concat([all_test_X_pd, all_test_y_pd], axis = 1)
     print(list(all_test))
+    all_train = all_train.sort_values(by = ['date'])
     all_train.to_csv(DIRECTORY+"training.csv")
+    all_test = all_test.sort_values(by = ['date'])
     all_test.to_csv(DIRECTORY+"testing.csv")
     return all_train, all_test
+
+
+
+def save_train_test_new(biz_file, review_file, num_reviews_before = 100):
+    biz = pd.read_csv(DIRECTORY+biz_file, encoding= "utf-8")
+
+    biz_id = biz['business_id']
+    features_df_clean = construct_meta_features(biz)
+
+    featues_ohe = ohe_features(features_df_clean)
+
+    linked_featues_ohe = pd.concat([biz_id, featues_ohe], axis= 1)
+
+    reviewfile = DIRECTORY + review_file
+    review = parseRatingOverTime(reviewfile)
+    review_sorted = review.sort_values(by = ['business_id', 'date'])
+
+    all_data = linked_featues_ohe.merge(review_sorted, left_on = 'business_id', right_on = 'business_id')
+    keepcol = list(all_data)
+    keepcol.remove('average_over_span')
+    all_data = all_data[keepcol]
+    all_data.dropna( inplace= True)
+
+    all_data_super = []
+
+    all_biz, indx = np.unique(all_data['business_id'], return_index=True)
+    indx = sorted(indx) + [all_data.shape[0]]
+    indx_ranges = [(indx[i], indx[i+1]) for i in range(len(indx)-1)]
+    for indx_r in indx_ranges:
+        biz_data = all_data.iloc[indx_r[0]:indx_r[1]]
+        # print(np.unique(biz_data['business_id']))
+        # print("before:", biz_data.shape)
+        biz_data = add_past_revCount_features(biz_data, num_reviews_before)
+        # print("after:", biz_data.shape)
+        all_data_super.append(biz_data)
+
+    all_data_super_pd  = pd.concat(all_data_super, axis = 0)
+    all_data_super_pd = all_data_super_pd.sort_values(by = ['date'])
+
+
+    all_data_super_pd['running_average_past_bin'] = np.zeros(all_data_super_pd.shape[0])
+    posRatings = all_data_super_pd['running_average_past']  > 2.5
+    all_data_super_pd['running_average_past_bin'].loc[posRatings] = np.ones(sum(posRatings)) 
+
+    all_data_super_pd['running_average_bin'] = np.zeros(all_data_super_pd.shape[0])
+    posRatings = all_data_super_pd['running_average']  > 2.5
+    all_data_super_pd['running_average_bin'].loc[posRatings] = np.ones(sum(posRatings)) 
+    all_data_super_pd.dropna(inplace = True)
+
+
+
+
+
+    all_train = all_data_super_pd.iloc[:int(all_data_super_pd.shape[0]*0.7)]
+    all_test = all_data_super_pd.iloc[int(all_data_super_pd.shape[0]*0.7):]
+
+    print(list(all_test))
+    all_train.to_csv(DIRECTORY+"training.csv")
+    all_test = all_test.sort_values(by = ['date'])
+    all_test.to_csv(DIRECTORY+"testing.csv")
+    return all_train, all_test
+
+
+
+
 
 
 def main():
     biz_file = 'filtered_business.csv'
     review_file = 'review.csv'
-    all_train, all_test = save_train_test(biz_file, review_file, num_reviews_before = 100)
+    all_train, all_test = save_train_test_new(biz_file, review_file, num_reviews_before = 100)
     print(all_train.shape)
 if __name__ == "__main__":
-    # main()
-    pass
+    main()
+    # pass
 
-biz_file = 'filtered_business.csv'
-review_file = 'review.csv'
+# biz_file = 'filtered_business.csv'
+# review_file = 'review.csv'
+# all_train, all_test = save_train_test(biz_file, review_file, num_reviews_before = 100)
+
